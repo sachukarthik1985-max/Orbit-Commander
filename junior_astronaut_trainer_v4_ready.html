@@ -1,0 +1,2815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Commander – Junior Astronaut Mission Trainer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- HTML2PDF CDN for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        if (window.tailwind) tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hud: {
+                            bg: '#02040a',
+                            panel: 'rgba(10, 22, 44, 0.25)',
+                            border: '#00f3ff',
+                            glow: 'rgba(0, 243, 255, 0.25)',
+                            accent: '#ff0055',
+                            warn: '#ffb700',
+                            success: '#00ff66',
+                            card: 'rgba(20, 40, 75, 0.25)'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        
+        body {
+            background-color: #02040a;
+            color: #e2e8f0;
+            font-family: 'Rajdhani', sans-serif;
+            user-select: none;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* ULTRA-CINEMATIC CANVAS LIVE WALLPAPER LAYER */
+        #wallpaper-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* TRANSLUCENT LIGHTER GLASS PANELS FOR BACKGROUND VISIBILITY */
+        .glass-panel {
+            background: rgba(12, 28, 55, 0.28);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(0, 243, 255, 0.08);
+            position: relative;
+            z-index: 10;
+        }
+
+        .glass-panel-interactive { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glass-panel-interactive:hover {
+            border-color: rgba(0, 243, 255, 0.9);
+            box-shadow: 0 12px 35px 0 rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 243, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* LIGHTER DISTINCT BUTTON / BOX BACKGROUNDS */
+        .ui-card-box {
+            background: rgba(18, 42, 78, 0.38);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: all 0.2s ease;
+        }
+        .ui-card-box:hover {
+            background: rgba(24, 56, 102, 0.5);
+            border-color: rgba(0, 243, 255, 0.7);
+        }
+
+        .neon-glow-cyan { text-shadow: 0 0 8px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.4); }
+
+        .tab-btn.active {
+            background: rgba(0, 243, 255, 0.35);
+            border-color: #00f3ff;
+            color: #00f3ff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        .tutorial-highlight {
+            animation: targetBlinkPulse 0.5s ease-in-out 6 !important;
+            position: relative;
+            z-index: 40;
+        }
+        @keyframes targetBlinkPulse {
+            0%, 100% { border-color: rgba(0, 243, 255, 0.3); box-shadow: 0 0 0px rgba(0, 243, 255, 0); }
+            50% { border-color: #00f3ff; box-shadow: 0 0 45px #00f3ff, inset 0 0 25px rgba(0, 243, 255, 0.7); }
+        }
+
+        .critical-red-alert-screen {
+            animation: redAlertFlash 1s infinite alternate;
+            border: 4px solid #ff0055 !important;
+        }
+        @keyframes redAlertFlash {
+            0% { box-shadow: inset 0 0 50px rgba(255, 0, 85, 0.4); }
+            100% { box-shadow: inset 0 0 120px rgba(255, 0, 85, 0.9); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(2, 4, 10, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.4); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 243, 255, 0.8); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(20, 40, 75, 0.6);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            border-radius: 4px;
+            height: 8px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px; width: 20px; border-radius: 50%;
+            background: #00f3ff; box-shadow: 0 0 12px #00f3ff; cursor: pointer;
+        }
+
+        .pdf-page {
+            width: 800px;
+            background: #02040a;
+            color: #ffffff;
+            font-family: 'Rajdhani', sans-serif;
+            padding: 30px;
+            border: 3px solid #00f3ff;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body id="main-body" class="p-3 md:p-6 text-slate-100 relative" onclick="unlockAudioOnce()">
+
+    <!-- ULTRA-CINEMATIC CANVAS LIVE WALLPAPER -->
+    <canvas id="wallpaper-canvas"></canvas>
+
+    <!-- CRITICAL RED ALERT OVERLAY BANNER -->
+    <div id="critical-alert-banner" class="hidden fixed top-0 left-0 w-full z-40 bg-red-600 text-white font-orbitron font-black py-2.5 px-4 text-xs md:text-sm tracking-widest uppercase animate-pulse border-b-2 border-white shadow-2xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            <span>DANGER: CREW SUPPLIES OR HEALTH CRITICAL! CHECK MISSION CONTROL MESSAGE</span>
+        </div>
+        <div id="alert-hint-actions" class="flex items-center gap-2">
+            <button onclick="highlightSolutionFromDrawer()" class="px-3 py-1 bg-cyan-400 text-slate-950 rounded text-xs font-bold hover:bg-cyan-300 transition">
+                <i class="fa-solid fa-crosshairs mr-1"></i> FIX PROBLEM
+            </button>
+        </div>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS MODAL -->
+    <div id="shortcuts-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 backdrop-blur-sm hidden p-4">
+        <div class="glass-panel p-6 rounded-2xl max-w-md w-full space-y-4 border-2 border-cyan-400 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-cyan-900/50 pb-3">
+                <div class="flex items-center gap-2 text-cyan-400 font-orbitron font-bold text-base">
+                    <i class="fa-solid fa-keyboard"></i> KEYBOARD SHORTCUTS
+                </div>
+                <button onclick="closeShortcutsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-2 font-mono text-xs text-slate-200">
+                <div class="flex justify-between p-2 ui-card-box rounded"><span class="text-cyan-300 font-bold">M</span> <span>Mute Voice Audio</span></div>
+                <div class="flex justify-between p-2 ui-card-box rounded"><span class="text-cyan-300 font-bold">SPACE</span> <span>Pause / Resume Simulation</span></div>
+                <div class="flex justify-between p-2 ui-card-box rounded"><span class="text-cyan-300 font-bold">1 / 2</span> <span>Set Speed (1x, 5x)</span></div>
+                <div class="flex justify-between p-2 ui-card-box rounded"><span class="text-cyan-300 font-bold">S</span> <span>Toggle Radiation Shelter</span></div>
+            </div>
+            <button onclick="closeShortcutsModal()" class="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-orbitron font-bold text-xs rounded transition">CLOSE SHORTCUTS</button>
+        </div>
+    </div>
+
+    <!-- SITE & MODE SELECTOR MODAL (HOME DASHBOARD) -->
+    <div id="site-selector-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 backdrop-blur-sm p-4">
+        <div class="glass-panel p-6 md:p-8 rounded-2xl max-w-5xl w-full border-2 border-cyan-400/50 shadow-2xl relative">
+            
+            <div class="absolute top-4 right-6 text-right">
+                <span class="text-[10px] font-mono text-slate-300 uppercase tracking-widest block"><i class="fa-solid fa-stopwatch mr-1 text-cyan-400"></i> TRAINER TIME</span>
+                <span id="modal-trainer-timer" class="text-sm font-bold font-mono text-cyan-300">00:00</span>
+            </div>
+
+            <div id="modal-view-main" class="space-y-6">
+                <div class="text-center">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/60 border border-cyan-500/50 rounded-full text-cyan-300 text-xs font-mono font-bold tracking-widest uppercase mb-3">
+                        <i class="fa-solid fa-satellite-dish animate-pulse"></i> JUNIOR ASTRONAUT TRAINER APP
+                    </div>
+                    <h1 class="text-3xl md:text-5xl font-extrabold font-orbitron text-white tracking-wider neon-glow-cyan mb-2">ORBIT COMMANDER</h1>
+                    <p class="text-slate-200 font-rajdhani text-sm md:text-base max-w-xl mx-auto">Select a mission profile to begin training as a Junior Astronaut!</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div onclick="startInteractiveLearn()" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-purple-500/60 cursor-pointer flex flex-col justify-between group bg-purple-950/30">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono font-bold text-purple-300 uppercase">Academy</span>
+                                <span class="px-2 py-0.5 text-[10px] bg-purple-950 text-purple-200 rounded border border-purple-700">Walkthrough</span>
+                            </div>
+                            <h3 class="text-base font-bold font-orbitron text-white mb-2 group-hover:text-purple-300 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-graduation-cap text-purple-400"></i> Interactive Academy
+                            </h3>
+                            <p class="text-[11px] font-rajdhani text-slate-200 mb-3 leading-relaxed">A talking guide shows you how to run your base, step by step.</p>
+                        </div>
+                        <button class="w-full py-2 bg-purple-600/50 hover:bg-purple-500/70 text-purple-100 border border-purple-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Start Academy</button>
+                    </div>
+
+                    <div onclick="selectLocation('moon')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-cyan-500/50 cursor-pointer flex flex-col justify-between group ui-card-box">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono font-bold text-cyan-300 uppercase">Guided Mission</span>
+                                <span class="px-2 py-0.5 text-[10px] bg-cyan-950/60 text-cyan-200 rounded border border-cyan-700">Moon</span>
+                            </div>
+                            <h3 class="text-base font-bold font-orbitron text-white mb-2 group-hover:text-cyan-300 transition">Lunar Base</h3>
+                            <p class="text-[11px] font-rajdhani text-slate-200 mb-3 leading-relaxed">Strong sunlight, no air outside. Keep your crew alive for 30 days.</p>
+                        </div>
+                        <button class="w-full py-2 bg-cyan-600/50 hover:bg-cyan-500/70 text-cyan-100 border border-cyan-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Deploy Moon</button>
+                    </div>
+
+                    <div onclick="selectLocation('mars')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-amber-500/50 cursor-pointer flex flex-col justify-between group ui-card-box">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono font-bold text-amber-300 uppercase">Guided Mission</span>
+                                <span class="px-2 py-0.5 text-[10px] bg-amber-950/60 text-amber-200 rounded border border-amber-700">Mars</span>
+                            </div>
+                            <h3 class="text-base font-bold font-orbitron text-white mb-2 group-hover:text-amber-300 transition">Martian Base</h3>
+                            <p class="text-[11px] font-rajdhani text-slate-200 mb-3 leading-relaxed">Weaker sunlight, dust storms, and messages from Earth take minutes to arrive. Survive 30 sols.</p>
+                        </div>
+                        <button class="w-full py-2 bg-amber-600/50 hover:bg-amber-500/70 text-amber-100 border border-amber-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Deploy Mars</button>
+                    </div>
+
+                    <div onclick="openChallengeDifficultyView()" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-red-500/60 cursor-pointer flex flex-col justify-between group bg-red-950/30">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono font-bold text-red-300 uppercase">Tactical</span>
+                                <span class="px-2 py-0.5 text-[10px] bg-red-950 text-red-200 rounded border border-red-700">CHALLENGE</span>
+                            </div>
+                            <h3 class="text-base font-bold font-orbitron text-white mb-2 group-hover:text-red-300 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation text-red-400"></i> Challenge Mode
+                            </h3>
+                            <p class="text-[11px] font-rajdhani text-slate-200 mb-3 leading-relaxed">A harder mission on Mars with less money. Help from Earth is slow, so think for yourself!</p>
+                        </div>
+                        <button class="w-full py-2 bg-red-600/50 hover:bg-red-500/70 text-red-100 border border-red-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Select Challenge</button>
+                    </div>
+
+                    <div onclick="selectLocation('sandbox')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-emerald-500/50 cursor-pointer flex flex-col justify-between group bg-emerald-950/30">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-mono font-bold text-emerald-300 uppercase">Lab Sandbox</span>
+                                <span class="px-2 py-0.5 text-[10px] bg-emerald-950 text-emerald-200 rounded border border-emerald-700">Free Play</span>
+                            </div>
+                            <h3 class="text-base font-bold font-orbitron text-white mb-2 group-hover:text-emerald-300 transition">Free Sandbox</h3>
+                            <p class="text-[11px] font-rajdhani text-slate-200 mb-3 leading-relaxed">Try anything you like. The crew can't get sick here, so experiment!</p>
+                        </div>
+                        <button class="w-full py-2 bg-emerald-600/50 hover:bg-emerald-500/70 text-emerald-100 border border-emerald-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Enter Lab</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHALLENGE DIFFICULTY SELECTOR VIEW -->
+            <div id="modal-view-challenge" class="hidden space-y-6">
+                <div class="flex justify-between items-center border-b border-cyan-900/50 pb-4">
+                    <div>
+                        <span class="text-xs font-mono font-bold text-red-400 tracking-widest uppercase"><i class="fa-solid fa-shield-cat mr-1"></i> SELECT DIFFICULTY LEVEL</span>
+                        <h2 class="text-2xl md:text-3xl font-extrabold font-orbitron text-white">CHALLENGE MODE PROTOCOL</h2>
+                    </div>
+                    <button onclick="backToMainSelector()" class="px-3 py-1.5 glass-panel text-xs font-mono text-cyan-300 rounded-lg border border-cyan-700 hover:bg-cyan-950/40 transition">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Back to Main
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div onclick="startChallenge('EASY')" class="glass-panel glass-panel-interactive p-6 rounded-xl border border-emerald-500/60 cursor-pointer flex flex-col justify-between group bg-emerald-950/20">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="px-2 py-0.5 text-xs font-mono font-bold bg-emerald-950 text-emerald-200 rounded border border-emerald-600">LEVEL 1</span>
+                                <span class="text-xs font-mono text-emerald-300">25 Sols Goal</span>
+                            </div>
+                            <h3 class="text-xl font-bold font-orbitron text-emerald-300 mb-2">EASY MODE</h3>
+                            <ul class="text-xs font-mono text-slate-200 space-y-2 mb-6">
+                                <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i> Initial Budget: <strong>1,800 CR</strong></li>
+                                <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i> Solar Array: <strong>300 kW</strong></li>
+                                <li><i class="fa-solid fa-shield-check text-emerald-400 mr-1.5"></i> Objective: <strong>Survive 25 sols with crew health above 75%</strong></li>
+                            </ul>
+                        </div>
+                        <button class="w-full py-2.5 bg-emerald-600/50 hover:bg-emerald-500/70 text-emerald-100 border border-emerald-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Start Easy Challenge</button>
+                    </div>
+
+                    <div onclick="startChallenge('MEDIUM')" class="glass-panel glass-panel-interactive p-6 rounded-xl border border-amber-500/60 cursor-pointer flex flex-col justify-between group bg-amber-950/20">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="px-2 py-0.5 text-xs font-mono font-bold bg-amber-950 text-amber-200 rounded border border-amber-600">LEVEL 2</span>
+                                <span class="text-xs font-mono text-amber-300">30 Sols Goal</span>
+                            </div>
+                            <h3 class="text-xl font-bold font-orbitron text-amber-300 mb-2">MEDIUM MODE</h3>
+                            <ul class="text-xs font-mono text-slate-200 space-y-2 mb-6">
+                                <li><i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i> Initial Budget: <strong>1,000 CR</strong></li>
+                                <li><i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i> Solar Array: <strong>450 kW</strong></li>
+                                <li><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5"></i> Objective: <strong>Survive 30 sols with crew health above 75%</strong></li>
+                            </ul>
+                        </div>
+                        <button class="w-full py-2.5 bg-amber-600/50 hover:bg-amber-500/70 text-amber-100 border border-amber-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Start Medium Challenge</button>
+                    </div>
+
+                    <div onclick="startChallenge('HARD')" class="glass-panel glass-panel-interactive p-6 rounded-xl border border-red-500/70 cursor-pointer flex flex-col justify-between group bg-red-950/30">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="px-2 py-0.5 text-xs font-mono font-bold bg-red-950 text-red-200 rounded border border-red-600 animate-pulse">HARDCORE</span>
+                                <span class="text-xs font-mono text-red-300">45 Sols Goal</span>
+                            </div>
+                            <h3 class="text-xl font-bold font-orbitron text-red-400 mb-2">HARD MODE</h3>
+                            <ul class="text-xs font-mono text-slate-200 space-y-2 mb-6">
+                                <li><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i> Initial Budget: <strong>500 CR</strong></li>
+                                <li><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i> Solar Array: <strong>800 kW</strong></li>
+                                <li><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i> Objective: <strong>Survive 45 sols with crew health above 75%</strong></li>
+                            </ul>
+                        </div>
+                        <button class="w-full py-2.5 bg-red-600/50 hover:bg-red-500/70 text-red-100 border border-red-400/70 rounded-lg text-xs font-orbitron font-bold tracking-wider uppercase transition">Start Hard Challenge</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN INTERFACE CONTAINER -->
+    <div class="max-w-7xl mx-auto space-y-4 relative z-10">
+        <!-- HEADER HUD -->
+        <header class="glass-panel p-4 rounded-xl flex flex-wrap justify-between items-center gap-4 border border-cyan-500/40">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <h1 class="text-xl md:text-2xl font-bold font-orbitron text-white tracking-wider">ORBIT COMMANDER <span class="text-cyan-300 font-normal">Base Control</span></h1>
+                    <span id="mode-badge" class="px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-cyan-950/70 text-cyan-200 border border-cyan-600">Guided Mission</span>
+                </div>
+                <p id="site-display-name" class="text-xs font-mono text-slate-300 mt-1">Shackleton Rim (Moon) — Base data</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openShortcutsModal()" class="px-3 py-1.5 glass-panel hover:bg-cyan-950/40 text-xs font-mono text-purple-200 rounded-lg border border-purple-500/60 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-keyboard"></i> KEYS [M, Space, S]
+                </button>
+
+                <button id="btn-toggle-audio" onclick="toggleAudio()" class="px-3 py-1.5 glass-panel text-xs font-mono font-bold rounded-lg transition text-red-300 border border-red-700 bg-red-950/40 flex items-center gap-1.5">
+                    <i id="icon-audio" class="fa-solid fa-volume-xmark"></i> <span id="label-audio">AMBIENT: OFF</span>
+                </button>
+                <button id="btn-toggle-sfx" onclick="toggleSFX()" class="px-3 py-1.5 glass-panel text-xs font-mono font-bold rounded-lg transition text-cyan-200 border border-cyan-700 bg-cyan-950/40 flex items-center gap-1.5">
+                    <i id="icon-sfx" class="fa-solid fa-bell"></i> <span id="label-sfx">SFX: ON</span>
+                </button>
+
+                <button onclick="resetSolCounter(true)" class="px-3 py-1.5 glass-panel hover:bg-cyan-950/40 text-xs font-mono text-cyan-200 rounded-lg border border-cyan-600/60 transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> <span id="reset-counter-btn-label">Reset Days</span>
+                </button>
+
+                <button onclick="restartFullGame()" class="px-3 py-1.5 glass-panel hover:bg-red-950/50 text-xs font-mono text-red-200 rounded-lg border border-red-500/60 transition flex items-center gap-1">
+                    <i class="fa-solid fa-power-off"></i> Restart Game
+                </button>
+
+                <button onclick="toggleModeSwitcher()" class="px-3 py-1.5 glass-panel hover:bg-cyan-950/40 text-xs font-mono text-slate-200 rounded-lg border border-slate-500 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-globe"></i> Switch Site
+                </button>
+
+                <div class="flex glass-panel p-1 rounded-lg border border-cyan-700/60 font-orbitron text-xs ml-1">
+                    <button id="tab-btn-command" onclick="switchTab('command')" class="tab-btn active px-3 py-1.5 rounded transition">
+                        <i class="fa-solid fa-microchip mr-1"></i> CONTROL
+                    </button>
+                    <button id="tab-btn-learn" onclick="switchTab('learn')" class="tab-btn px-3 py-1.5 rounded transition text-slate-300 hover:text-cyan-300">
+                        <i class="fa-solid fa-graduation-cap mr-1"></i> LEARN
+                    </button>
+                    <button id="tab-btn-lab" onclick="switchTab('lab')" class="tab-btn px-3 py-1.5 rounded transition text-slate-300 hover:text-cyan-300">
+                        <i class="fa-solid fa-flask mr-1"></i> SCIENCE LAB
+                    </button>
+                    <button id="tab-btn-data" onclick="switchTab('data')" class="tab-btn px-3 py-1.5 rounded transition text-slate-300 hover:text-cyan-300">
+                        <i class="fa-solid fa-calculator mr-1"></i> PHYSICS
+                    </button>
+                </div>
+
+                <div class="glass-panel px-3 py-1.5 rounded-lg border border-cyan-700/60 text-center">
+                    <div class="text-[9px] font-mono text-slate-300 uppercase tracking-widest">Trainer Time</div>
+                    <div id="header-trainer-timer" class="text-sm font-bold text-emerald-300 font-mono">00:00</div>
+                </div>
+
+                <div class="glass-panel px-3 py-1.5 rounded-lg border border-cyan-700/60 text-right">
+                    <div class="text-[9px] font-mono text-slate-300 uppercase tracking-widest">Base Time</div>
+                    <div id="sol-display" class="text-sm md:text-base font-bold text-cyan-300 font-mono">Day 1.0 <span class="text-xs text-slate-300">(08:00)</span></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CHALLENGE OBJECTIVE TRACKER BAR -->
+        <div id="challenge-tracker-bar" class="hidden glass-panel p-3.5 rounded-xl border border-red-500/60 bg-red-950/20">
+            <div class="flex flex-wrap justify-between items-center gap-4 text-xs font-mono">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-300 font-orbitron font-bold uppercase tracking-wider text-[10px]">CHALLENGE OBJECTIVE</span>
+                    <span id="challenge-target-text" class="text-slate-100 font-bold">Survive 30 sols on Medium with crew health above 75%</span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div><span class="text-slate-300">Target Duration:</span> <span id="ch-sol-progress" class="text-cyan-300 font-bold">1.0 / 30 Sols</span></div>
+                    <div><span class="text-slate-300">Crew Health Goal:</span> <span id="ch-health-target" class="text-emerald-300 font-bold">&gt; 75%</span></div>
+                    <div><span class="text-slate-300">Max Radiation Dose:</span> <span id="ch-rad-target" class="text-red-300 font-bold">&lt; 150 mSv</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 1: CONTROL COMMAND -->
+        <main id="tab-command" class="space-y-4">
+            <div id="floating-banner-container"></div>
+
+            <!-- TOP ROW: GAME SPEED, SHELTER, CREDITS & HIDDEN DRILL SWITCH -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <!-- Speed Controls -->
+                <div class="md:col-span-4 glass-panel p-3.5 rounded-xl flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-orbitron font-semibold text-cyan-300 tracking-wider mb-1">GAME SPEED</div>
+                        <div id="sim-status-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-600/50">RUNNING (1x)</div>
+                    </div>
+                    <div class="flex gap-2 font-mono">
+                        <button onclick="setSimSpeed(0)" id="spd-btn-0" class="px-3 py-2 ui-card-box hover:bg-slate-700/60 border border-slate-500 text-xs font-bold rounded transition text-amber-300 flex items-center gap-1">
+                            <i class="fa-solid fa-pause"></i> Pause
+                        </button>
+                        <button onclick="setSimSpeed(1)" id="spd-btn-1" class="px-3 py-2 bg-cyan-950/60 border border-cyan-500/80 text-cyan-200 text-xs font-bold rounded transition">1x</button>
+                        <button onclick="setSimSpeed(5)" id="spd-btn-5" class="px-3 py-2 ui-card-box hover:bg-slate-700/60 border border-slate-500 text-xs font-bold rounded transition text-slate-200">5x</button>
+                    </div>
+                </div>
+
+                <!-- Radiation Storm Shelter & Money -->
+                <div id="shelter-panel-container" class="md:col-span-8 glass-panel p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <span class="text-xs font-orbitron font-semibold text-emerald-300 tracking-wider block">MISSION CREDITS</span>
+                            <span id="credits-display" class="font-orbitron text-xl font-bold text-emerald-300">1,250 CR</span>
+                        </div>
+                        <div class="border-l border-cyan-800/60 pl-4">
+                            <button id="shelter-btn" onclick="toggleShelter()" class="px-4 py-2 rounded-lg font-orbitron text-xs font-bold ui-card-box border border-slate-500 text-slate-200 hover:border-cyan-400 transition">
+                                <i class="fa-solid fa-shield-halved mr-1"></i> SHELTER: OFF (click to hide crew)
+                            </button>
+                            <div id="flare-status" class="text-[10px] font-mono text-slate-300 mt-1">No solar flare right now.</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button onclick="toggleDemoDrillsPanel()" class="px-3 py-1.5 ui-card-box hover:bg-purple-950/40 border border-purple-500/60 text-purple-200 rounded text-xs font-mono transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-flask"></i> <span id="demo-drill-toggle-label">Demo Drill Panel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HIDDEN DRILL PANEL -->
+            <div id="demo-drill-panel" class="hidden glass-panel p-3.5 rounded-xl border border-purple-500/60 bg-purple-950/30">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-orbitron font-semibold text-purple-200 tracking-wider"><i class="fa-solid fa-video mr-1"></i> VIDEO DEMO EMERGENCY DRILLS</span>
+                    <span class="text-[10px] font-mono text-purple-300">TEST ENGINE MECHANICS LIVE</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                    <button onclick="triggerDrill('SPE')" class="p-2 bg-red-950/50 hover:bg-red-900/70 border border-red-600/70 text-red-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-sun mr-1"></i> SOLAR FLARE</div>
+                        <div class="text-[8px] font-mono text-red-300">Real NASA flare</div>
+                    </button>
+                    <button onclick="triggerDrill('STORM')" class="p-2 bg-amber-950/50 hover:bg-amber-900/70 border border-amber-600/70 text-amber-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-wind mr-1"></i> DUST STORM</div>
+                        <div class="text-[8px] font-mono text-amber-300">Blocks solar power</div>
+                    </button>
+                    <button onclick="triggerDrill('O2_FAIL')" class="p-2 bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-600/70 text-cyan-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-lungs-virus mr-1"></i> AIR FILTER</div>
+                        <div class="text-[8px] font-mono text-cyan-300">Uses +15 kW</div>
+                    </button>
+                    <button onclick="triggerDrill('THERMAL')" class="p-2 bg-blue-950/50 hover:bg-blue-900/70 border border-blue-600/70 text-blue-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-snowflake mr-1"></i> BIG FREEZE</div>
+                        <div class="text-[8px] font-mono text-blue-300">Heaters +25 kW</div>
+                    </button>
+                    <button onclick="triggerDrill('BREACH')" class="p-2 bg-purple-950/50 hover:bg-purple-900/70 border border-purple-600/70 text-purple-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-meteor mr-1"></i> HOLE IN WALL</div>
+                        <div class="text-[8px] font-mono text-purple-300">Pumps +20 kW</div>
+                    </button>
+                    <button onclick="triggerDrill('BATTERY_SHORT')" class="p-2 bg-yellow-950/50 hover:bg-yellow-900/70 border border-yellow-600/70 text-yellow-200 rounded text-left transition">
+                        <div class="text-[10px] font-bold font-orbitron"><i class="fa-solid fa-bolt mr-1"></i> BATTERY SHORT</div>
+                        <div class="text-[8px] font-mono text-yellow-300">Loses 50% power</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- THREE BIG METERS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 1. POWER METER -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center justify-between text-center border-2 border-yellow-500/50 bg-yellow-950/15">
+                    <span class="text-sm font-orbitron font-bold text-yellow-300 tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> POWER STATUS
+                    </span>
+                    <div class="relative w-36 h-36 my-3">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-800/60" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="gauge-solar-arc" class="text-yellow-400 transition-all duration-300" stroke-dasharray="0, 100" stroke-width="4" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="gauge-solar-val" class="font-orbitron font-black text-2xl text-yellow-300">120.0</span>
+                            <span class="text-xs font-mono text-slate-200">kW Generated</span>
+                        </div>
+                    </div>
+                    <div id="brownout-status-text" class="text-xs font-mono text-slate-200 font-bold">Solar Panels Active</div>
+                </div>
+
+                <!-- 2. SUPPLIES & HEALTH METER -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center justify-between text-center border-2 border-cyan-500/50 bg-cyan-950/15">
+                    <span class="text-sm font-orbitron font-bold text-cyan-300 tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-packing"></i> SUPPLIES &amp; CREW
+                    </span>
+                    <div class="relative w-36 h-36 my-3">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-800/60" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="gauge-supplies-arc" class="text-cyan-300 transition-all duration-300" stroke-dasharray="80, 100" stroke-width="4" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="bar-health-val" class="font-orbitron font-black text-2xl text-cyan-200">100%</span>
+                            <span class="text-xs font-mono text-slate-200">Crew Vitals</span>
+                        </div>
+                    </div>
+                    <div class="text-xs font-mono text-slate-200 font-bold">Air, Water &amp; Food Ready</div>
+                </div>
+
+                <!-- 3. RADIATION METER -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center justify-between text-center border-2 border-red-500/50 bg-red-950/15">
+                    <span class="text-sm font-orbitron font-bold text-red-300 tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-radiation"></i> RADIATION DOSE
+                    </span>
+                    <div class="relative w-36 h-36 my-3">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-800/60" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="gauge-rad-arc" class="text-red-400 transition-all duration-300" stroke-dasharray="0, 100" stroke-width="4" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="gauge-rad-val" class="font-orbitron font-black text-2xl text-red-300">0.5</span>
+                            <span class="text-xs font-mono text-slate-200">µSv/h</span>
+                            <span class="text-[9px] font-mono text-slate-400">radiation each hour</span>
+                        </div>
+                    </div>
+                    <span id="rad-status-desc" class="text-xs font-mono text-slate-200 font-bold">Safe Environment</span>
+                </div>
+            </div>
+
+            <!-- LIFE SUPPORT STORES & SLIDERS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-7 glass-panel p-4 rounded-xl space-y-3">
+                    <h3 class="font-orbitron text-xs font-bold text-cyan-300 tracking-wider flex items-center justify-between border-b border-cyan-900/50 pb-2">
+                        <span>SUPPLIES DETAILS</span>
+                        <button id="details-toggle-btn" onclick="toggleSupplyDetails()" class="px-2 py-0.5 ui-card-box border border-cyan-700 rounded text-[10px] font-mono text-cyan-200 normal-case">Show details</button>
+                    </h3>
+                    <p id="details-collapsed-note" class="text-[11px] font-mono text-slate-300">The three big meters above are all you need. Click "Show details" to see oxygen, water, food and dust. (They open by themselves if something runs low.)</p>
+                    <div id="supply-details" class="hidden space-y-3">
+
+                    <div>
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-car-battery text-amber-300 mr-1.5"></i> Battery Storage:</span>
+                            <span id="bar-battery-val" class="text-amber-200 font-bold">450 / 500 kWh (90%)</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-battery-fill" class="bg-gradient-to-r from-amber-600 to-yellow-400 h-full rounded-full transition-all duration-300" style="width: 90%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-lungs text-cyan-300 mr-1.5"></i> Air (Oxygen):</span>
+                            <span id="bar-o2-val" class="text-cyan-200 font-bold">120 / 150 kg (80%)</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-o2-fill" class="bg-gradient-to-r from-cyan-600 to-teal-400 h-full rounded-full transition-all duration-300" style="width: 80%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-droplet text-blue-300 mr-1.5"></i> Clean Water:</span>
+                            <span id="bar-water-val" class="text-blue-200 font-bold">400 / 500 L (80%)</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-water-fill" class="bg-gradient-to-r from-blue-600 to-sky-400 h-full rounded-full transition-all duration-300" style="width: 80%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-wheat-awn text-emerald-300 mr-1.5"></i> Food Rations:</span>
+                            <span id="bar-food-val" class="text-emerald-200 font-bold">180 / 200 kg (90%)</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-food-fill" class="bg-gradient-to-r from-emerald-600 to-green-400 h-full rounded-full transition-all duration-300" style="width: 90%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-dust text-amber-400 mr-1.5"></i> Solar Panel Dust:</span>
+                            <span id="bar-dust-val" class="text-amber-300 font-bold">12% dusty</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-dust-fill" class="bg-gradient-to-r from-amber-700 to-orange-400 h-full rounded-full transition-all duration-300" style="width: 12%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-cyan-900/50">
+                        <div class="flex justify-between text-xs font-mono mb-1">
+                            <span class="text-slate-200"><i class="fa-solid fa-radiation text-red-300 mr-1"></i> Radiation Dose Accumulated:</span>
+                            <span id="bar-dose-val" class="text-red-200 font-bold">1.2 / 150 mSv</span>
+                        </div>
+                        <div class="w-full ui-card-box rounded-full h-2.5 p-0.5 border border-cyan-900/60">
+                            <div id="bar-dose-fill" class="bg-gradient-to-r from-yellow-500 to-red-600 h-full rounded-full transition-all duration-300" style="width: 12%"></div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- POWER ALLOCATION SLIDERS CARD -->
+                <div id="tut-slider-panel" class="lg:col-span-5 glass-panel p-4 rounded-xl flex flex-col justify-between space-y-3">
+                    <div class="space-y-3">
+                        <h3 class="font-orbitron text-xs font-bold text-amber-300 tracking-wider flex items-center justify-between border-b border-cyan-900/50 pb-2">
+                            <span>SHARE YOUR POWER</span>
+                            <i class="fa-solid fa-bolt text-amber-300"></i>
+                        </h3>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center text-xs font-mono">
+                                <span class="text-slate-100"><i class="fa-solid fa-wind text-cyan-300 mr-1"></i> Air Maker Power:</span>
+                                <span class="text-cyan-200"><span id="slider-o2-kw">25</span> kW <span class="text-slate-400">|</span> <span id="slider-o2-yield" class="text-emerald-300">+3.0 kg/time</span></span>
+                            </div>
+                            <input id="slider-o2" type="range" min="0" max="50" value="25" class="w-full" oninput="updatePowerAllocations()">
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center text-xs font-mono">
+                                <span class="text-slate-100"><i class="fa-solid fa-seedling text-emerald-300 mr-1"></i> Greenhouse Lights Power:</span>
+                                <span class="text-emerald-200"><span id="slider-food-kw">30</span> kW <span class="text-slate-400">|</span> <span id="slider-food-yield" class="text-emerald-300">+2.4 kg/time</span></span>
+                            </div>
+                            <input id="slider-food" type="range" min="0" max="60" value="30" class="w-full" oninput="updatePowerAllocations()">
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center text-xs font-mono">
+                                <span class="text-slate-100"><i class="fa-solid fa-recycle text-blue-300 mr-1"></i> Water Recycler Power:</span>
+                                <span class="text-blue-200"><span id="slider-water-kw">20</span> kW <span class="text-slate-400">|</span> <span id="slider-water-yield" class="text-emerald-300">49% reused</span></span>
+                            </div>
+                            <input id="slider-water" type="range" min="0" max="40" value="20" class="w-full" oninput="updatePowerAllocations()">
+                        </div>
+
+                        <div class="p-2 ui-card-box rounded-lg border border-cyan-900/60 flex justify-between items-center text-xs font-mono text-slate-200">
+                            <span><i class="fa-solid fa-house-signal text-purple-300 mr-1"></i> Base Air Cleaners:</span>
+                            <span class="text-purple-200 font-bold">10 kW (Fixed)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUILD & FIX + MISSION CONTROL MESSAGE -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-7 glass-panel p-4 rounded-xl space-y-3 flex flex-col justify-between border-2 border-cyan-400/50">
+                    <div class="flex justify-between items-center border-b border-cyan-900/50 pb-2">
+                        <span class="text-xs font-orbitron font-bold text-cyan-300 tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-satellite-dish animate-pulse"></i> MISSION CONTROL TRANSMISSION
+                        </span>
+                        <span id="comms-delay-badge" class="text-[10px] font-mono text-cyan-200 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-700">Radio delay: 1.3 s</span>
+                    </div>
+                    
+                    <div id="mission-control-box" class="p-4 ui-card-box rounded-xl border border-cyan-800/60 text-xs font-mono space-y-2 min-h-[100px] flex flex-col justify-center">
+                        <div class="text-yellow-300 font-bold flex items-center gap-1.5"><i class="fa-solid fa-lightbulb"></i> CAPCOM STATUS:</div>
+                        <div id="mission-control-text" class="text-slate-100 leading-relaxed">
+                            Welcome Junior Astronaut! Balance your power sliders to make oxygen and recycle water.
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="highlightSolutionFromDrawer()" class="w-full py-2 bg-cyan-600/50 hover:bg-cyan-500/70 border border-cyan-400/70 text-cyan-100 rounded font-orbitron text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-crosshairs"></i> SHOW ME WHAT TO FIX
+                        </button>
+                    </div>
+                </div>
+
+                <div id="eng-bay-panel" class="lg:col-span-5 glass-panel p-4 rounded-xl flex flex-col justify-between space-y-3">
+                    <h3 class="font-orbitron text-xs font-bold text-cyan-300 tracking-wider flex items-center justify-between border-b border-cyan-900/50 pb-2">
+                        <span>BUILD &amp; FIX</span>
+                        <i class="fa-solid fa-screwdriver-wrench text-cyan-300"></i>
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button onclick="buyUpgrade('SOLAR')" class="p-2.5 ui-card-box hover:bg-cyan-950/50 border border-cyan-700/60 text-left rounded-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-bold font-orbitron text-white">+40m² Solar Array</div>
+                                <div class="text-[10px] font-mono text-slate-300">+30 kW more power</div>
+                            </div>
+                            <div class="mt-2 text-xs font-mono font-bold text-emerald-300">400 CR</div>
+                        </button>
+
+                        <button onclick="buyUpgrade('BATTERY')" class="p-2.5 ui-card-box hover:bg-cyan-950/50 border border-cyan-700/60 text-left rounded-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-bold font-orbitron text-white">+200 kWh Battery</div>
+                                <div class="text-[10px] font-mono text-slate-300">Saves power for night</div>
+                            </div>
+                            <div class="mt-2 text-xs font-mono font-bold text-emerald-300">350 CR</div>
+                        </button>
+
+                        <button onclick="buyUpgrade('SHIELD')" class="p-2.5 ui-card-box hover:bg-cyan-950/50 border border-cyan-700/60 text-left rounded-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-bold font-orbitron text-white">Soil Wall Shield</div>
+                                <div class="text-[10px] font-mono text-slate-300">Piles soil: -25% radiation</div>
+                            </div>
+                            <div class="mt-2 text-xs font-mono font-bold text-emerald-300">500 CR</div>
+                        </button>
+
+                        <div id="tut-clean-btn" class="h-full">
+                            <button onclick="cleanPanels()" class="w-full h-full p-2.5 ui-card-box hover:bg-cyan-950/50 border border-cyan-700/60 text-left rounded-lg transition flex flex-col justify-between">
+                                <div>
+                                    <div class="text-xs font-bold font-orbitron text-white">Clean Dust Panels</div>
+                                    <div class="text-[10px] font-mono text-slate-300">Sweeps dust off panels</div>
+                                </div>
+                                <div class="mt-2 text-xs font-mono font-bold text-amber-300">50 CR</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl space-y-2">
+                <h3 class="font-orbitron text-xs font-bold text-slate-200 tracking-wider flex items-center justify-between border-b border-cyan-900/50 pb-2">
+                    <span>MISSION LOG HISTORY</span>
+                    <i class="fa-solid fa-terminal text-cyan-300"></i>
+                </h3>
+                <div id="console-log" class="h-28 overflow-y-auto font-mono text-xs space-y-1 ui-card-box p-3 rounded-lg border border-cyan-900/50">
+                    <div class="text-cyan-300">[START] Orbit Commander base is online.</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB CONTENT 2: LEARN MODULE -->
+        <main id="tab-learn" class="hidden space-y-4">
+            <div class="glass-panel p-6 rounded-xl space-y-6 border border-cyan-500/50">
+                <div class="flex flex-wrap justify-between items-center border-b border-cyan-900/50 pb-4 gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-2 text-xs font-mono text-cyan-300 uppercase tracking-widest mb-1">
+                            <i class="fa-solid fa-walkie-talkie animate-pulse"></i> CAPCOM VOICE AUDIO INSTRUCTOR
+                        </div>
+                        <h2 class="font-orbitron text-2xl font-bold text-white">JUNIOR ASTRONAUT ACADEMY</h2>
+                    </div>
+
+                    <div class="flex items-center gap-3 ui-card-box p-3 rounded-xl border border-cyan-800/60">
+                        <div class="flex items-center bg-slate-950/60 p-1 rounded-lg border border-cyan-900 text-xs font-mono">
+                            <button id="vmode-live" onclick="setVoiceMode('fast')" class="px-2.5 py-1 rounded bg-cyan-600 text-slate-950 font-bold transition">FAST VOICE (1.3x)</button>
+                            <button id="vmode-normal" onclick="setVoiceMode('slow')" class="px-2.5 py-1 rounded text-slate-300 hover:text-cyan-200 transition">SLOW VOICE (0.7x)</button>
+                        </div>
+                        <button onclick="stopCapcomVoice()" class="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-mono font-bold rounded flex items-center gap-1.5">
+                            <i class="fa-solid fa-volume-xmark"></i> MUTE (Key 'M')
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div onclick="speakLesson('ECLSS')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-cyan-800/80 cursor-pointer space-y-2 group ui-card-box">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-cyan-300 font-bold">MODULE 01</span>
+                            <i class="fa-solid fa-circle-play text-cyan-300 group-hover:scale-125 transition"></i>
+                        </div>
+                        <h3 class="font-orbitron font-bold text-white text-base">How the Base Makes Air and Water (Sabatier System)</h3>
+                        <p class="text-xs font-mono text-slate-200 leading-relaxed">
+                            <span class="text-cyan-200 font-bold">Sabatier System:</span> CO₂ + 4H₂ → CH₄ + 2H₂O<br>
+                            <span class="text-cyan-200 font-bold">Electrolysis:</span> 2H₂O + Power → 2H₂ + O₂<br>
+                            CO₂ from breath turns into water, then electricity splits water to yield fresh oxygen to breathe!
+                        </p>
+                    </div>
+
+                    <div onclick="speakLesson('DUST')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-amber-800/80 cursor-pointer space-y-2 group ui-card-box">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-amber-300 font-bold">MODULE 02</span>
+                            <i class="fa-solid fa-circle-play text-amber-300 group-hover:scale-125 transition"></i>
+                        </div>
+                        <h3 class="font-orbitron font-bold text-white text-base">Why Dust Is Bad for Solar Panels</h3>
+                        <p class="text-xs font-mono text-slate-200 leading-relaxed">Moon dust and Mars dust storms cover the panels and block sunlight, so they make less power. Robots have to sweep them clean.</p>
+                    </div>
+
+                    <div onclick="speakLesson('RAD')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-red-800/80 cursor-pointer space-y-2 group ui-card-box">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-red-300 font-bold">MODULE 03</span>
+                            <i class="fa-solid fa-circle-play text-red-300 group-hover:scale-125 transition"></i>
+                        </div>
+                        <h3 class="font-orbitron font-bold text-white text-base">Space Radiation and Solar Flares</h3>
+                        <p class="text-xs font-mono text-slate-200 leading-relaxed">Find out why the crew must hide in a shelter covered with soil when a big solar flare sends a particle storm.</p>
+                    </div>
+
+                    <div onclick="speakLesson('TEMP')" class="glass-panel glass-panel-interactive p-4 rounded-xl border border-blue-800/80 cursor-pointer space-y-2 group ui-card-box">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-blue-300 font-bold">MODULE 04</span>
+                            <i class="fa-solid fa-circle-play text-blue-300 group-hover:scale-125 transition"></i>
+                        </div>
+                        <h3 class="font-orbitron font-bold text-white text-base">Super Hot Days, Super Cold Nights</h3>
+                        <p class="text-xs font-mono text-slate-200 leading-relaxed">On the Moon it can be hotter than boiling water in sunlight (+120°C) and colder than any freezer in the shade (-130°C).</p>
+                    </div>
+                </div>
+
+                <div class="ui-card-box p-4 rounded-xl border border-cyan-900/60 space-y-3">
+                    <h3 class="font-orbitron text-xs font-bold text-slate-100 tracking-wider flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-headset text-cyan-300"></i> ASK MISSION CONTROL A QUESTION</span>
+                        <span id="capcom-status-text" class="text-[10px] font-mono text-cyan-200 animate-pulse">CAPCOM READY (FAST VOICE)</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <input id="capcom-query-input" type="text" placeholder="Type a question..." class="w-full bg-slate-950/80 border border-cyan-900 rounded-lg px-3 py-2 text-xs font-mono text-cyan-200 focus:outline-none focus:border-cyan-400">
+
+                        <button onclick="askCapcomQuestion()" class="px-4 py-2 bg-cyan-600/50 hover:bg-cyan-500/70 border border-cyan-400 text-cyan-100 font-orbitron text-xs font-bold rounded-lg transition whitespace-nowrap">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> TRANSMIT
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-1 text-xs font-mono">
+                        <span class="text-slate-300 self-center">Quick Ask:</span>
+                        <button onclick="quickAsk('How do we clean dust?')" class="px-2.5 py-1 ui-card-box hover:bg-cyan-950 text-cyan-200 border border-cyan-800 rounded">"How do we clean dust?"</button>
+                        <button onclick="quickAsk('Where is the shelter?')" class="px-2.5 py-1 ui-card-box hover:bg-cyan-950 text-cyan-200 border border-cyan-800 rounded">"Where is the shelter?"</button>
+                        <button onclick="quickAsk('How does Sabatier reaction work?')" class="px-2.5 py-1 ui-card-box hover:bg-cyan-950 text-cyan-200 border border-cyan-800 rounded">"Sabatier reaction"</button>
+                    </div>
+                    <div id="capcom-transcript" class="p-3 bg-slate-950/80 rounded-lg border border-cyan-900 text-xs font-mono text-slate-200 italic min-h-[48px] flex items-center">
+                        Select a module above, use a quick ask button, or type a question to hear Houston CAPCOM response...
+                    </div>
+                </div>
+
+                <div class="ui-card-box p-4 rounded-xl border border-pink-800/60 space-y-2">
+                    <h3 class="font-orbitron text-xs font-bold text-pink-300 tracking-wider"><i class="fa-solid fa-dna mr-1"></i> REAL NASA HEALTH FINDING (OSDR)</h3>
+                    <p class="text-xs font-mono text-slate-200 leading-relaxed">Mice that spent about a month in space on the BION-M1 satellite made fewer young germ-fighting cells (B cells) in their bones, and the change lasted at least a week after they landed. Space is hard on bodies, which is why your crew needs enough food, water and air to stay healthy.</p>
+                    <p class="text-[10px] font-mono text-slate-400">Source: NASA Open Science Data Repository (OSDR), dataset GLDS-345 "Mouse femur LC-MSMS upon weightlessness".</p>
+                </div>
+
+                <div class="ui-card-box p-4 rounded-xl border border-emerald-800/60 space-y-2">
+                    <h3 class="font-orbitron text-xs font-bold text-emerald-300 tracking-wider"><i class="fa-solid fa-book mr-1"></i> SPACE WORDS</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono text-slate-200">
+                        <div><strong class="text-emerald-200">CAPCOM:</strong> The person at mission control who talks to the astronauts.</div>
+                        <div><strong class="text-emerald-200">Sol:</strong> One day on Mars, about 24 hours and 40 minutes.</div>
+                        <div><strong class="text-emerald-200">Life support:</strong> The machines that make air and clean water for the crew.</div>
+                        <div><strong class="text-emerald-200">Solar panels:</strong> Panels that turn sunlight into electricity.</div>
+                        <div><strong class="text-emerald-200">Battery:</strong> Saves power from the day so the base can run at night.</div>
+                        <div><strong class="text-emerald-200">kW (kilowatt):</strong> How much power something uses or makes.</div>
+                        <div><strong class="text-emerald-200">Solar flare:</strong> A huge flash from the Sun. A bigger X number means a stronger flare.</div>
+                        <div><strong class="text-emerald-200">Particle storm:</strong> Tiny, fast bits from the Sun that can follow a big flare.</div>
+                        <div><strong class="text-emerald-200">Radiation dose (mSv):</strong> How much space radiation the crew has soaked up in total. Lower is safer.</div>
+                        <div><strong class="text-emerald-200">µSv/h:</strong> How much radiation hits the crew each hour. 1,000 µSv = 1 mSv.</div>
+                        <div><strong class="text-emerald-200">kWh (kilowatt-hour):</strong> How much energy the battery has saved up.</div>
+                        <div><strong class="text-emerald-200">Communication delay:</strong> Radio travels at the speed of light, but Mars is so far away that a message takes about 3 to 22 minutes to arrive.</div>
+                        <div><strong class="text-emerald-200">Microgravity:</strong> Floating in space with almost no weight. It makes bones and muscles weaker.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB CONTENT 3: SCIENCE LAB -->
+        <main id="tab-lab" class="hidden space-y-4">
+            <div id="wrap-lab-panel" class="glass-panel p-6 rounded-xl space-y-6">
+                <div id="tut-lab-panel" class="space-y-6">
+                    <div class="flex justify-between items-center border-b border-cyan-900/50 pb-3">
+                        <div>
+                            <span class="text-xs font-mono text-emerald-300 uppercase">JUNIOR ASTRONAUT ACADEMY</span>
+                            <h2 class="font-orbitron text-xl font-bold text-white">NASA RESEARCH EXPERIMENTS</h2>
+                            <p class="text-[11px] font-mono text-slate-300 mt-1">Science earns credits for upgrades, but the crew works hard: each experiment uses battery power AND oxygen.</p>
+                        </div>
+                        <div class="px-3 py-1 bg-emerald-950/70 border border-emerald-500/60 rounded-lg text-emerald-200 font-mono text-xs font-bold">
+                            RESEARCH POINTS: <span id="rp-display" class="text-white font-orbitron text-sm">0 RP</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 ui-card-box rounded-xl border border-cyan-800/60 flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-mono text-cyan-300 font-bold mb-1">EXPERIMENT 01</div>
+                                <h3 class="font-orbitron font-bold text-white mb-2">Lunar Ice Extraction</h3>
+                                <p class="text-xs font-mono text-slate-200 leading-relaxed mb-4">Dig ice out of dark craters at the Moon's south pole and melt it into water and rocket fuel.</p>
+                            </div>
+                            <button id="exp-btn-1" onclick="runExperiment(60, 100, 1, 5)" class="w-full py-2 bg-cyan-600/50 hover:bg-cyan-500/70 border border-cyan-400 text-cyan-100 rounded font-orbitron text-xs font-bold">RUN (+100 RP) · costs 60 kWh + 5 kg oxygen</button>
+                        </div>
+
+                        <div class="p-4 ui-card-box rounded-xl border border-amber-800/60 flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-mono text-amber-300 font-bold mb-1">EXPERIMENT 02</div>
+                                <h3 class="font-orbitron font-bold text-white mb-2">Baking Soil into Bricks</h3>
+                                <p class="text-xs font-mono text-slate-200 leading-relaxed mb-4">Heat Moon and Mars soil until it sticks together, to 3D-print homes and storm shelters.</p>
+                            </div>
+                            <button id="exp-btn-2" onclick="runExperiment(80, 150, 2, 7)" class="w-full py-2 bg-amber-600/50 hover:bg-amber-500/70 border border-amber-400 text-amber-100 rounded font-orbitron text-xs font-bold">RUN (+150 RP) · costs 80 kWh + 7 kg oxygen</button>
+                        </div>
+
+                        <div class="p-4 ui-card-box rounded-xl border border-purple-800/60 flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-mono text-purple-300 font-bold mb-1">EXPERIMENT 03</div>
+                                <h3 class="font-orbitron font-bold text-white mb-2">Breath-to-Water Machine</h3>
+                                <p class="text-xs font-mono text-slate-200 leading-relaxed mb-4">Turns the carbon dioxide the crew breathes out into water and fuel. The water is then split to make fresh oxygen.</p>
+                            </div>
+                            <button id="exp-btn-3" onclick="runExperiment(100, 200, 3, 9)" class="w-full py-2 bg-purple-600/50 hover:bg-purple-500/70 border border-purple-400 text-purple-100 rounded font-orbitron text-xs font-bold">RUN (+200 RP) · costs 100 kWh + 9 kg oxygen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB CONTENT 4: PHYSICS & DATA -->
+        <main id="tab-data" class="hidden space-y-4">
+            <div class="glass-panel p-6 rounded-xl space-y-6">
+                <h2 class="font-orbitron text-xl font-bold text-cyan-300 border-b border-cyan-900/50 pb-3 flex items-center justify-between">
+                    <span>THE SCIENCE BEHIND THE GAME</span>
+                    <i class="fa-solid fa-square-root-variable text-cyan-300"></i>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                    <div class="p-4 ui-card-box rounded-xl border border-cyan-900/60 space-y-2">
+                        <div class="text-yellow-300 font-bold font-orbitron text-sm">1. SOLAR POWER, DAY AND NIGHT</div>
+                        <p class="text-slate-300 leading-relaxed text-[11px]">We sped things up: in the game a Moon day lasts 24 hours. A real day on the Moon lasts about a month (2 weeks of light, 2 weeks of dark). If the battery is empty and there is no sun, the machines stop.</p>
+                        <div class="p-2 bg-slate-950/80 rounded text-yellow-200 text-center font-bold">P_solar = P_max · max(0, sin(2π · t / 24)) · (1 - Dust%)</div>
+                        <p class="text-slate-200 leading-relaxed text-[11px]">Panels make most power at midday, none at night, and less when they are dusty.</p>
+                    </div>
+
+                    <div class="p-4 ui-card-box rounded-xl border border-cyan-900/60 space-y-2">
+                        <div class="text-red-300 font-bold font-orbitron text-sm">2. HOW RADIATION ADDS UP</div>
+                        <div class="p-2 bg-slate-950/80 rounded text-red-200 text-center font-bold">Dose_rate = (Space radiation + Flare storm) · (1 - Soil shield) · (0.1 if in shelter)</div>
+                        <p class="text-slate-200 leading-relaxed text-[11px]">Space radiation plus any particle storm, made smaller by the soil shield and the storm shelter.</p>
+                    </div>
+
+                    <div class="md:col-span-2 p-4 ui-card-box rounded-xl border border-amber-800/60 space-y-2">
+                        <div class="text-amber-300 font-bold font-orbitron text-sm flex items-center justify-between">
+                            <span>3. REAL NASA SOLAR FLARES USED IN THIS GAME</span>
+                            <span id="nasa-api-badge" class="text-[10px] bg-cyan-950/80 text-cyan-200 border border-cyan-700 px-2 py-0.5 rounded">5 REAL FLARES BUILT IN</span>
+                        </div>
+                        <p class="text-slate-200 leading-relaxed text-[11px]">Every flare in the game is a real flare from NASA's Space Weather Database (DONKI). The five below are built into the game, so it works without internet. If the internet is on, the game also downloads the newest strong flares from DONKI. An M flare is 10 times weaker than an X flare with the same number.</p>
+                        <p class="text-amber-200 leading-relaxed text-[11px]">Game rule (not always true in real life): in this game every flare sends a particle storm, and bigger flares send stronger storms. The storm strength is our game estimate. In real life, only some flares send particle storms.</p>
+                        <div id="real-flare-table" class="space-y-1"></div>
+                    </div>
+
+                    <div class="md:col-span-2 p-4 ui-card-box rounded-xl border border-emerald-800/60 space-y-2">
+                        <div class="text-emerald-300 font-bold font-orbitron text-sm">4. REAL NASA DATA WE USED (AND WHERE IT CAME FROM)</div>
+                        <ul class="text-slate-200 leading-relaxed text-[11px] space-y-1.5 list-disc pl-4">
+                            <li><strong>Solar flares:</strong> NASA Space Weather Database (DONKI), kauai.ccmc.gsfc.nasa.gov/DONKI. Flare dates and sizes are real.</li>
+                            <li><strong>Mars radiation:</strong> NASA Curiosity rover's Radiation Assessment Detector measured about 0.64 mSv per day on Mars (Hassler et al., Science, 2014). In the game: 27 µSv/h.</li>
+                            <li><strong>Moon radiation:</strong> China's Chang'e 4 lander measured about 1.37 mSv per day on the Moon (Zhang et al., Science Advances, 2020). In the game: 57 µSv/h. They also found that about 50 cm of Moon soil on top of a base protects people, which is why the Soil Wall Shield works.</li>
+                            <li><strong>Astronaut health:</strong> NASA Open Science Data Repository (OSDR), dataset GLDS-345 (mice on the BION-M1 satellite).</li>
+                            <li><strong>Air, water and food per astronaut:</strong> NASA life-support planning numbers: 0.84 kg of oxygen per person per day.</li>
+                            <li><strong>Mars facts:</strong> NASA Mars Exploration: a sol is about 24 h 40 min, and Mars gets about 43% of the sunlight Earth gets (590 vs 1361 W/m²). Sites: Shackleton Rim (Artemis Moon south pole region) and Jezero Crater (Perseverance rover).</li>
+                            <li><strong>Radio delay:</strong> light takes about 1.3 seconds to reach the Moon and about 3 to 22 minutes to reach Mars, depending on where the planets are.</li>
+                        </ul>
+                        <div class="text-emerald-300 font-bold font-orbitron text-sm pt-2">CREDITS</div>
+                        <ul class="text-slate-300 leading-relaxed text-[11px] space-y-1 list-disc pl-4">
+                            <li>Game design, code and text: our team (NASA Space Apps Challenge 2026), with help from AI coding tools.</li>
+                            <li>Fonts: Orbitron, Rajdhani and Share Tech Mono from Google Fonts (SIL Open Font License).</li>
+                            <li>Icons: Font Awesome Free (CC BY 4.0). Styling: Tailwind CSS (MIT License). PDF report: html2pdf.js (MIT License).</li>
+                            <li>Sounds and the planet background are made by our own code. The voice is your browser's built-in speech.</li>
+                            <li>This is a student project. It is not made or endorsed by NASA.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MISSION END MODAL -->
+    <div id="modal-end" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm hidden p-4">
+        <div class="glass-panel p-6 rounded-2xl max-w-md w-full space-y-4 text-center border-2 border-cyan-400">
+            <div id="end-icon" class="text-5xl text-emerald-300"><i class="fa-solid fa-trophy animate-bounce"></i></div>
+            <h2 id="end-title" class="font-orbitron text-2xl font-black text-emerald-300 tracking-wider">MISSION ACCOMPLISHED</h2>
+            <p id="end-desc" class="text-xs font-mono text-slate-200">You successfully managed Orbit Commander!</p>
+
+            <div class="p-3 ui-card-box rounded-lg border border-cyan-900/60 font-mono text-xs space-y-1.5 text-left">
+                <div class="flex justify-between"><span>Time Duration:</span> <span id="end-sols-count" class="text-cyan-200">30 / 30</span></div>
+                <div class="flex justify-between"><span>Final Crew Health:</span> <span id="end-health" class="text-emerald-200">100%</span></div>
+                <div class="flex justify-between"><span>Radiation Dose:</span> <span id="end-dose" class="text-red-200">24 mSv</span></div>
+            </div>
+
+            <div class="flex flex-col gap-2 pt-2">
+                <button id="end-pdf-btn" onclick="downloadMissionReportPDF()" class="w-full py-2 bg-cyan-600/50 hover:bg-cyan-500 text-cyan-100 font-orbitron font-bold text-xs rounded-lg transition border border-cyan-400 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-pdf"></i> <span id="end-pdf-label">DOWNLOAD MISSION REPORT &amp; CERTIFICATE (.PDF)</span>
+                </button>
+                <button onclick="restartSimulation()" class="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-orbitron font-bold text-sm rounded-lg transition shadow-lg shadow-cyan-500/30">RESTART SIMULATION</button>
+                <button onclick="returnToMainMenu()" class="w-full py-2 ui-card-box hover:bg-slate-700/60 text-slate-200 font-orbitron font-bold text-xs rounded-lg transition border border-slate-600 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-house"></i> GO BACK TO MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN PDF CERTIFICATE TEMPLATE -->
+    <div class="hidden">
+        <div id="pdf-export-container">
+            <div class="pdf-page">
+                <div style="border-bottom: 2px solid #00f3ff; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h1 style="font-size: 26px; font-weight: 900; color: #00f3ff; margin: 0;">ORBIT COMMANDER</h1>
+                        <p style="font-size: 11px; font-family: monospace; color: #a0aec0; margin: 5px 0 0 0;">JUNIOR ASTRONAUT TRAINER APP: A NASA SPACE APPS TEAM PROJECT</p>
+                    </div>
+                    <div style="text-align: right; font-family: monospace; font-size: 11px; color: #38bdf8;">
+                        <div>DATE: <span id="pdf-date">—</span></div>
+                        <div>TEAM PROJECT</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(15, 30, 58, 0.9); border: 1px solid #00f3ff; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                    <h3 style="color: #fbbf24; font-size: 14px; font-weight: bold; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 8px;">MISSION PERFORMANCE CARD</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-family: monospace; font-size: 12px;">
+                        <div style="grid-column: span 2;"><strong style="color: #94a3b8;">Mission Result:</strong> <span id="pdf-result" style="color: #4ade80;">—</span></div>
+                        <div><strong style="color: #94a3b8;">Target Site:</strong> <span id="pdf-site" style="color: #38bdf8;">Shackleton Rim (Moon)</span></div>
+                        <div><strong style="color: #94a3b8;">Mission Profile:</strong> <span id="pdf-mode" style="color: #38bdf8;">Guided Mission</span></div>
+                        <div><strong style="color: #94a3b8;">Final Time Reached:</strong> <span id="pdf-time" style="color: #4ade80;">30 / 30 Days</span></div>
+                        <div><strong style="color: #94a3b8;">Final Crew Health:</strong> <span id="pdf-vitals" style="color: #4ade80;">100%</span></div>
+                        <div><strong style="color: #94a3b8;">Accumulated Radiation:</strong> <span id="pdf-rad" style="color: #f87171;">12.4 mSv</span></div>
+                        <div><strong style="color: #94a3b8;">Credits Remaining:</strong> <span id="pdf-credits" style="color: #fbbf24;">1,250 CR</span></div>
+                        <div><strong style="color: #94a3b8;">Research Points Earned:</strong> <span id="pdf-rp" style="color: #c084fc;">350 RP</span></div>
+                        <div><strong style="color: #94a3b8;">Trainer Duration:</strong> <span id="pdf-duration" style="color: #38bdf8;">04m 12s</span></div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 10px; padding: 15px; font-family: monospace; font-size: 11px; line-height: 1.6; color: #cbd5e1;">
+                    <h4 style="color: #38bdf8; margin-top: 0;">TECHNICAL SYSTEM ASSESSMENT</h4>
+                    <div id="pdf-assessment"></div>
+                </div>
+            </div>
+
+            <div id="pdf-cert-page" class="pdf-page" style="page-break-before: always; border: 4px double #fbbf24; text-align: center; position: relative;">
+                <div style="border: 1px solid #38bdf8; padding: 30px; border-radius: 8px;">
+                    <div style="font-size: 28px; color: #fbbf24; font-weight: 900; letter-spacing: 1px;">JUNIOR ASTRONAUT TRAINER APP</div>
+                    <div style="font-size: 12px; color: #00f3ff; font-family: monospace; margin-top: 5px;">A NASA Space Apps Challenge team project</div>
+
+                    <div style="margin: 40px 0;">
+                        <p style="font-size: 14px; color: #94a3b8; font-family: monospace; text-transform: uppercase;">This certifies that Commander</p>
+                        <h1 id="pdf-cert-name" style="font-size: 36px; color: #ffffff; font-weight: 900; margin: 10px 0; text-decoration: underline decoration-cyan;">JUNIOR ASTRONAUT</h1>
+                        <p style="font-size: 13px; color: #cbd5e1; max-width: 500px; margin: 15px auto; line-height: 1.5;">
+                            has successfully commanded the <strong>ORBIT COMMANDER</strong> space outpost simulation, keeping the crew alive through real solar flares and life support challenges.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-around; margin-top: 50px; font-family: monospace; font-size: 11px; color: #94a3b8;">
+                        <div style="border-top: 1px solid #64748b; width: 180px; padding-top: 5px;">
+                            <strong style="color: #38bdf8; display: block;">MISSION CAPCOM</strong>
+                            Team Operations
+                        </div>
+                        <div style="border-top: 1px solid #64748b; width: 180px; padding-top: 5px;">
+                            <strong style="color: #fbbf24; display: block;">SPACE APPS CHALLENGE</strong>
+                            Team Project Submission
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPLETE LIVE ORBITING PLANETS WALLPAPER ENGINE -->
+    <script>
+        const canvas = document.getElementById('wallpaper-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+        let targetMouseX = width / 2;
+        let targetMouseY = height / 2;
+
+        window.addEventListener('mousemove', (e) => {
+            targetMouseX = e.clientX;
+            targetMouseY = e.clientY;
+        });
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initCelestialObjects();
+        });
+
+        let currentTheme = 'dashboard';
+        let hueShift = 220;
+
+        let moonObj = {};
+        let marsObj = {};
+
+        function initCelestialObjects() {
+            moonObj = { x: width * 0.82, y: height * 0.28, radius: Math.min(width, height) * 0.17 };
+            marsObj = { x: width * 0.18, y: height * 0.72, radius: Math.min(width, height) * 0.20 };
+        }
+        initCelestialObjects();
+
+        const planets = [
+            { name: 'Mercury', distance: 75, radius: 5, speed: 0.03, color: '#cbd5e1', angle: Math.random() * Math.PI },
+            { name: 'Venus', distance: 120, radius: 8, speed: 0.02, color: '#fef08a', angle: Math.random() * Math.PI },
+            { name: 'Earth', distance: 175, radius: 9, speed: 0.015, color: '#38bdf8', angle: Math.random() * Math.PI },
+            { name: 'Mars', distance: 235, radius: 7, speed: 0.012, color: '#fb923c', angle: Math.random() * Math.PI },
+            { name: 'Jupiter', distance: 315, radius: 17, speed: 0.007, color: '#fde047', angle: Math.random() * Math.PI },
+            { name: 'Saturn', distance: 400, radius: 14, speed: 0.005, color: '#fef08a', angle: Math.random() * Math.PI }
+        ];
+
+        // ENHANCED STAR DENSITY & VISIBILITY
+        const particleCount = 280;
+        const particles = Array.from({ length: particleCount }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: Math.random() * 2.8 + 0.6,
+            speedY: Math.random() * 0.3 + 0.1,
+            alpha: Math.random() * 0.9 + 0.3,
+            twinkleSpeed: Math.random() * 0.04 + 0.01,
+            parallaxFactor: Math.random() * 0.05 + 0.01
+        }));
+
+        const comets = [];
+        function spawnComet() {
+            if (Math.random() < 0.015 && comets.length < 3) {
+                comets.push({
+                    x: Math.random() * width * 0.8,
+                    y: Math.random() * height * 0.4,
+                    length: Math.random() * 90 + 60,
+                    speed: Math.random() * 10 + 6,
+                    angle: Math.PI / 4,
+                    alpha: 1
+                });
+            }
+        }
+
+        function setTheme(t) { currentTheme = t; }
+        function setWallpaperTheme(t) { setTheme(t); }
+
+        function drawWallpaper() {
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+
+            const offsetX = (mouseX - width / 2);
+            const offsetY = (mouseY - height / 2);
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (currentTheme === 'dashboard') {
+                hueShift = (hueShift + 0.02) % 360;
+                
+                // CLARIFIED & BRIGHTENED SPACE BACKGROUND GRADIENT
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#04091a');
+                grad.addColorStop(0.5, `hsl(${hueShift}, 70%, 10%)`);
+                grad.addColorStop(1, '#08142c');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                const sunX = width / 2 + offsetX * 0.01;
+                const sunY = height / 2 + offsetY * 0.01;
+                
+                // ENHANCED VIBRANT SUN GLOW & RAYS
+                const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 120);
+                sunGlow.addColorStop(0, '#ffffff');
+                sunGlow.addColorStop(0.2, '#fef08a');
+                sunGlow.addColorStop(0.5, '#f59e0b');
+                sunGlow.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                ctx.fillStyle = sunGlow;
+                ctx.beginPath();
+                ctx.arc(sunX, sunY, 120, 0, Math.PI * 2);
+                ctx.fill();
+
+                // SUN CORE
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(sunX, sunY, 26, 0, Math.PI * 2);
+                ctx.fill();
+
+                // SHARP & CLEAR ORBITAL PATHS & PLANETS
+                planets.forEach(p => {
+                    p.angle += p.speed;
+                    ctx.strokeStyle = 'rgba(0, 243, 255, 0.18)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(sunX, sunY, p.distance, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    const pX = sunX + Math.cos(p.angle) * p.distance;
+                    const pY = sunY + Math.sin(p.angle) * p.distance;
+
+                    // Planet Outer Glow
+                    ctx.fillStyle = p.color;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = p.color;
+                    ctx.beginPath();
+                    ctx.arc(pX, pY, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset shadow
+
+                    if (p.name === 'Saturn') {
+                        ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.arc(pX, pY, p.radius + 7, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+
+            } else if (currentTheme === 'academy') {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#090314');
+                grad.addColorStop(0.5, '#1e1b4b');
+                grad.addColorStop(1, '#02040a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.15)';
+                ctx.lineWidth = 1;
+                const gridSize = 60;
+                const timeOffset = (Date.now() * 0.02) % gridSize;
+
+                for (let x = 0; x < width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                for (let y = timeOffset; y < height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                ctx.save();
+                ctx.translate(width * 0.85, height * 0.2);
+                ctx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, 120, 0, Math.PI * 2);
+                ctx.stroke();
+
+                const angle = Date.now() * 0.002;
+                ctx.fillStyle = 'rgba(0, 243, 255, 0.2)';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 120, angle, angle + 0.5);
+                ctx.lineTo(0, 0);
+                ctx.fill();
+                ctx.restore();
+
+            } else if (currentTheme === 'moon') {
+                const grad = ctx.createRadialGradient(moonObj.x + offsetX * 0.01, moonObj.y + offsetY * 0.01, 10, width/2, height/2, width);
+                grad.addColorStop(0, '#091526');
+                grad.addColorStop(0.6, '#030712');
+                grad.addColorStop(1, '#010307');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+                drawMoon(moonObj.x + offsetX * 0.015, moonObj.y + offsetY * 0.015, moonObj.radius);
+
+            } else if (currentTheme === 'mars') {
+                const grad = ctx.createRadialGradient(marsObj.x + offsetX * 0.01, marsObj.y + offsetY * 0.01, 20, width/2, height/2, width);
+                grad.addColorStop(0, '#360d07');
+                grad.addColorStop(0.6, '#140503');
+                grad.addColorStop(1, '#050101');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+                drawMars(marsObj.x + offsetX * 0.015, marsObj.y + offsetY * 0.015, marsObj.radius);
+
+            } else if (currentTheme === 'challenge') {
+                const pulse = Math.sin(Date.now() * 0.004) * 0.2 + 0.8;
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, `rgba(60, 6, 14, ${pulse})`);
+                grad.addColorStop(1, '#030001');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+            } else if (currentTheme === 'sandbox') {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#021a12');
+                grad.addColorStop(0.5, '#043829');
+                grad.addColorStop(1, '#010a14');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            particles.forEach((p) => {
+                p.alpha += p.twinkleSpeed;
+                if (p.alpha > 1 || p.alpha < 0.2) p.twinkleSpeed = -p.twinkleSpeed;
+
+                const pX = p.x + offsetX * p.parallaxFactor;
+                const pY = p.y + offsetY * p.parallaxFactor;
+
+                ctx.save();
+                ctx.globalAlpha = Math.abs(p.alpha);
+
+                if (currentTheme === 'mars') {
+                    ctx.fillStyle = '#ff7b54';
+                    p.x += p.speedY * 0.7;
+                    if (p.x > width) p.x = 0;
+                } else if (currentTheme === 'challenge') {
+                    ctx.fillStyle = '#ff0055';
+                    p.y -= p.speedY * 2.5;
+                    if (p.y < 0) p.y = height;
+                } else if (currentTheme === 'academy') {
+                    ctx.fillStyle = '#c084fc';
+                    p.y -= p.speedY * 0.5;
+                    if (p.y < 0) p.y = height;
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                    p.y -= p.speedY * 0.3;
+                    if (p.y < 0) p.y = height;
+                }
+
+                ctx.beginPath();
+                ctx.arc(pX, pY, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            spawnComet();
+            for (let i = comets.length - 1; i >= 0; i--) {
+                const c = comets[i];
+                const endX = c.x - Math.cos(c.angle) * c.length;
+                const endY = c.y - Math.sin(c.angle) * c.length;
+
+                const cometGrad = ctx.createLinearGradient(c.x, c.y, endX, endY);
+                cometGrad.addColorStop(0, `rgba(255, 255, 255, ${c.alpha})`);
+                cometGrad.addColorStop(0.3, `rgba(0, 243, 255, ${c.alpha * 0.6})`);
+                cometGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.save();
+                ctx.strokeStyle = cometGrad;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(c.x, c.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.restore();
+
+                c.x += Math.cos(c.angle) * c.speed;
+                c.y += Math.sin(c.angle) * c.speed;
+                c.alpha -= 0.015;
+
+                if (c.alpha <= 0 || c.x > width || c.y > height) {
+                    comets.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(drawWallpaper);
+        }
+
+        function drawMoon(cx, cy, rad) {
+            ctx.save();
+            const glow = ctx.createRadialGradient(cx, cy, rad * 0.85, cx, cy, rad * 1.6);
+            glow.addColorStop(0, 'rgba(186, 230, 253, 0.3)');
+            glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, rad * 1.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            const moonGrad = ctx.createRadialGradient(cx - rad * 0.35, cy - rad * 0.35, rad * 0.05, cx, cy, rad);
+            moonGrad.addColorStop(0, '#f8fafc');
+            moonGrad.addColorStop(0.5, '#94a3b8');
+            moonGrad.addColorStop(0.85, '#334155');
+            moonGrad.addColorStop(1, '#020617');
+            ctx.fillStyle = moonGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawMars(cx, cy, rad) {
+            ctx.save();
+            const glow = ctx.createRadialGradient(cx, cy, rad * 0.85, cx, cy, rad * 1.5);
+            glow.addColorStop(0, 'rgba(249, 115, 22, 0.35)');
+            glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, rad * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            const marsGrad = ctx.createRadialGradient(cx - rad * 0.35, cy - rad * 0.35, rad * 0.05, cx, cy, rad);
+            marsGrad.addColorStop(0, '#fb923c');
+            marsGrad.addColorStop(0.45, '#c2410c');
+            marsGrad.addColorStop(0.85, '#6b21a8');
+            marsGrad.addColorStop(1, '#090101');
+            ctx.fillStyle = marsGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        drawWallpaper();
+    </script>
+
+    <!-- ORBIT COMMANDER GAME LOGIC SCRIPT -->
+    <script>
+        const START_FOOD = 40;            
+        const START_WATER = 200;          
+        const SHELTER_FAN_KW = 10;        
+        const MARS_GUIDED_ARRAY = 400;    
+        const FLARE_DOSE_PER_X = 150;     
+        const FLARE_WARNING_SOLS = 0.25;  
+        const FLARE_STORM_SOLS = 1.0;
+        const DOSE_WARN = 100;            // mSv: crew starts to feel sick above this (game limit)
+        const DOSE_LIMIT = 150;           // mSv: challenge fails at this dose (game limit)
+        const OSDR_FACT = "Real NASA finding (OSDR): mice that spent about a month in space made fewer young germ-fighting cells in their bones, and it lasted a week after landing. Keep your crew fed and healthy!";
+
+        const REAL_FLARES = [
+            { date: "14 December 2023", cls: 2.8, note: "One of the strongest flares of 2023." },
+            { date: "9 February 2024",  cls: 3.3, note: "Erupted from just behind the Sun's edge. A real particle storm followed near Earth." },
+            { date: "14 May 2024",      cls: 8.7, note: "One of the strongest flares of solar cycle 25." },
+            { date: "3 October 2024",   cls: 9.0, note: "Strongest solar flare recorded in 2024." },
+            { date: "24 October 2024",  cls: 3.3, note: "A cloud of solar gas from it (a CME) brushed Earth two days later." }
+        ];
+        REAL_FLARES.forEach(f => { f.label = `X${f.cls.toFixed(1)}`; f.dose = Math.round(f.cls * FLARE_DOSE_PER_X); f.source = 'built-in'; });
+
+        const SIM = {
+            mode: 'guided',
+            site: 'MOON',
+            difficulty: 'MEDIUM',
+            sol: 1.0,
+            targetSols: 30,
+            speed: 0,
+            credits: 1250,
+            commDelayMin: 0.02,
+            rp: 0,
+            shelterActive: false,
+            audioEnabled: false,
+            sfxEnabled: true,
+            tutorialActive: false,
+            tutStep: 1,
+            voiceMode: 'fast',
+            lastEventCheckSol: 1,
+            currentIncidentHint: "Balance your oxygen and water power sliders to conserve energy stores.",
+            currentIncidentTarget: "tut-slider-panel",
+            trainerSeconds: 0,
+            experimentCooldown: 0,
+            audioUnlocked: false,
+            sites: {
+                MOON: { name: "Shackleton Rim (Moon)", solarFlux: 1361, baseGCR: 57, timeLabel: "Day" },
+                MARS: { name: "Jezero Crater (Mars)", solarFlux: 590, baseGCR: 27, timeLabel: "Sol" }
+            },
+            arrayPowerMax: 150,
+            batteryMax: 500,
+            batteryStored: 200,
+            dustLevel: 12,
+            allocO2: 25,
+            allocFood: 30,
+            allocWater: 20,
+            allocBase: 10,
+            o2Max: 150,
+            o2Stored: 80,
+            waterMax: 500,
+            waterStored: START_WATER,
+            foodMax: 100,
+            foodStored: START_FOOD,
+            crewCount: 4,
+            crewHealth: 100,
+            crewDose: 1.2,
+            shieldingLevel: 0.0,
+            activeEvent: null,
+            eventDuration: 0,
+            history: [],
+            flareWarning: false,
+            flareWarningLeft: 0,
+            radStormLeft: 0,
+            currentFlare: null,
+            lastFlareIndex: -1,
+            nextFlareSol: 4,
+            lastResult: null,
+            lastCause: '',
+            stats: {}
+        };
+
+        function resetMissionStats() {
+            SIM.stats = {
+                flaresTotal: 0, flaresSheltered: 0, unshelteredStormSols: 0, thisFlareUnsheltered: 0,
+                shelterSols: 0, brownoutSols: 0, panelsCleaned: 0,
+                lowestO2: 100, lowestFood: 100, lowestWater: 100,
+                o2RanOut: false, foodRanOut: false, waterRanOut: false
+            };
+        }
+        resetMissionStats();
+
+        setInterval(() => {
+            SIM.trainerSeconds++;
+            const mins = Math.floor(SIM.trainerSeconds / 60);
+            const secs = SIM.trainerSeconds % 60;
+            const timeStr = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            const headerTimer = document.getElementById('header-trainer-timer');
+            const modalTimer = document.getElementById('modal-trainer-timer');
+            if (headerTimer) headerTimer.innerText = timeStr;
+            if (modalTimer) modalTimer.innerText = timeStr;
+        }, 1000);
+
+        let audioCtx = null;
+        let ambientGain = null;
+
+        function unlockAudioOnce() {
+            if (SIM.audioUnlocked) return;
+            SIM.audioUnlocked = true;
+            initAudioEngine();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function initAudioEngine() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                ambientGain = audioCtx.createGain();
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(55, audioCtx.currentTime);
+                osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(110.5, audioCtx.currentTime);
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(200, audioCtx.currentTime);
+                ambientGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                osc1.connect(filter); osc2.connect(filter);
+                filter.connect(ambientGain); ambientGain.connect(audioCtx.destination);
+                osc1.start(); osc2.start();
+            } catch (e) {}
+        }
+
+        function speakText(text) {
+            unlockAudioOnce();
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (SIM.voiceMode === 'fast') {
+                utterance.pitch = 1.2;
+                utterance.rate = 1.3;
+            } else {
+                utterance.pitch = 0.8;
+                utterance.rate = 0.7;
+            }
+            setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+            }, 50);
+        }
+
+        function toggleAudio() {
+            unlockAudioOnce();
+            SIM.audioEnabled = !SIM.audioEnabled;
+            const btn = document.getElementById('btn-toggle-audio');
+            const icon = document.getElementById('icon-audio');
+            const label = document.getElementById('label-audio');
+
+            if (SIM.audioEnabled && ambientGain) {
+                ambientGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.0);
+                btn.className = "px-3 py-1.5 glass-panel text-xs font-mono font-bold rounded-lg transition text-emerald-200 border border-emerald-700 bg-emerald-950/40 flex items-center gap-1.5";
+                icon.className = "fa-solid fa-volume-high";
+                label.innerText = "AMBIENT: ON";
+                playSFX(600, 0.1);
+            } else if (ambientGain) {
+                ambientGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                btn.className = "px-3 py-1.5 glass-panel text-xs font-mono font-bold rounded-lg transition text-red-300 border border-red-700 bg-red-950/40 flex items-center gap-1.5";
+                icon.className = "fa-solid fa-volume-xmark";
+                label.innerText = "AMBIENT: OFF";
+            }
+        }
+
+        function toggleSFX() {
+            SIM.sfxEnabled = !SIM.sfxEnabled;
+            const btn = document.getElementById('btn-toggle-sfx');
+            const label = document.getElementById('label-sfx');
+
+            if (SIM.sfxEnabled) {
+                btn.className = "px-3 py-1.5 glass-panel text-xs font-mono font-bold rounded-lg transition text-cyan-200 border border-cyan-700 bg-cyan-950/40 flex items-center gap-1.5";
+                label.innerText = "SFX: ON";
+                playSFX(800, 0.08);
+            } else {
+                btn.className = "px-3 py-1.5 glass-panel text-xs font-mono text-slate-400 border border-slate-700 bg-slate-900/40 flex items-center gap-1.5";
+                label.innerText = "SFX: OFF";
+            }
+        }
+
+        function playSFX(freq = 440, duration = 0.1, type = 'sine') {
+            if (!SIM.sfxEnabled) return;
+            unlockAudioOnce();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function setVoiceMode(mode) {
+            SIM.voiceMode = mode;
+            playSFX(750, 0.1);
+            const btnFast = document.getElementById('vmode-live');
+            const btnSlow = document.getElementById('vmode-normal');
+            const statusText = document.getElementById('capcom-status-text');
+
+            if (mode === 'fast') {
+                btnFast.className = "px-2.5 py-1 rounded bg-cyan-600 text-slate-950 font-bold transition";
+                btnSlow.className = "px-2.5 py-1 rounded text-slate-300 hover:text-cyan-200 transition";
+                statusText.innerText = "CAPCOM READY (FAST VOICE)";
+            } else {
+                btnSlow.className = "px-2.5 py-1 rounded bg-cyan-600 text-slate-950 font-bold transition";
+                btnFast.className = "px-2.5 py-1 rounded text-slate-300 hover:text-cyan-200 transition";
+                statusText.innerText = "CAPCOM READY (SLOW VOICE)";
+            }
+        }
+
+        function toggleDemoDrillsPanel() {
+            playSFX(700, 0.1);
+            const panel = document.getElementById('demo-drill-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function quickAsk(questionText) {
+            document.getElementById('capcom-query-input').value = questionText;
+            askCapcomQuestion();
+        }
+
+        function startInteractiveLearn() {
+            playSFX(850, 0.15);
+            resetSolCounter();
+            SIM.tutorialActive = true;
+            SIM.tutStep = 1;
+            SIM.mode = 'guided';
+            SIM.difficulty = 'STANDARD';
+            setWallpaperTheme('academy');
+            document.getElementById('challenge-tracker-bar').classList.add('hidden');
+            applyModeUI();
+            SIM.site = 'MOON';
+            SIM.targetSols = 9999;
+            
+            resetUpgrades();
+            setCommsForSite();
+            document.getElementById('site-selector-modal').classList.add('hidden');
+            switchTab('command');
+            applyTutorialHighlights();
+            beginMission();
+        }
+
+        function applyTutorialHighlights() {
+            clearTutorialHighlights();
+            removeFloatingBanner();
+
+            let stepTitle = '';
+            let stepDesc = '';
+            let targetElId = '';
+
+            const unit = SIM.sites[SIM.site].timeLabel + "s";
+            if (SIM.tutStep === 1) {
+                stepTitle = `STEP 1 / 4 (UNLIMITED ${unit.toUpperCase()}): Share Your Power`;
+                stepDesc = 'Share your power between air, plants and water recycling. Everything costs power!';
+                targetElId = 'tut-slider-panel';
+                speakText("Welcome, Junior Astronaut! Use the sliders to share power between the air maker, the plant room and water recycling.");
+            } else if (SIM.tutStep === 2) {
+                stepTitle = `STEP 2 / 4 (UNLIMITED ${unit.toUpperCase()}): Clean the Solar Panels`;
+                stepDesc = 'Dust accumulation lowers solar output. Click Clean Dust Panels to restore power.';
+                targetElId = 'eng-bay-panel';
+                speakText("Step two. Dust on the solar panels means less power. Click Clean Dust Panels.");
+            } else if (SIM.tutStep === 3) {
+                stepTitle = `STEP 3 / 4 (UNLIMITED ${unit.toUpperCase()}): Hide from Solar Flares`;
+                stepDesc = 'When a flare warning appears, click Shelter. It cuts radiation by 90%, but no food grows while you hide.';
+                targetElId = 'shelter-panel-container';
+                speakText("Step three. Solar flares send dangerous particle storms. Move the crew into the Storm Shelter until the storm is over.");
+            } else if (SIM.tutStep === 4) {
+                stepTitle = `STEP 4 / 4 (UNLIMITED ${unit.toUpperCase()}): Do Science, Earn Credits`;
+                stepDesc = 'Switch to the Science Lab tab and run experiments to earn Research Points.';
+                targetElId = 'wrap-lab-panel';
+                switchTab('lab');
+                speakText("Step four. Conduct research experiments in the Science Lab to earn Research Points and Command Credits!");
+            }
+
+            const container = document.getElementById('floating-banner-container');
+            if (container) {
+                const banner = document.createElement('div');
+                banner.id = 'floating-tut-banner';
+                banner.className = 'glass-panel p-4 rounded-xl border-2 border-cyan-400 bg-cyan-950/85 flex flex-wrap justify-between items-center gap-4 shadow-2xl shadow-cyan-500/50 mb-3';
+                banner.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 bg-cyan-500 text-slate-950 font-orbitron font-extrabold text-xs rounded">${stepTitle}</span>
+                        <p class="text-xs font-mono text-cyan-200">${stepDesc}</p>
+                    </div>
+                    <button onclick="nextTutorialStep()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-orbitron font-bold text-xs rounded transition whitespace-nowrap shadow-md">
+                        NEXT STEP <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                `;
+                container.appendChild(banner);
+            }
+
+            if (targetElId) highlightElementAndScroll(targetElId);
+        }
+
+        function removeFloatingBanner() {
+            const container = document.getElementById('floating-banner-container');
+            if (container) container.innerHTML = '';
+        }
+
+        function highlightElementAndScroll(id) {
+            clearTutorialHighlights();
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('tutorial-highlight');
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    el.classList.remove('tutorial-highlight');
+                }, 3000);
+            }
+        }
+
+        function clearTutorialHighlights() {
+            ['tut-slider-panel', 'eng-bay-panel', 'shelter-panel-container', 'wrap-lab-panel'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('tutorial-highlight');
+            });
+        }
+
+        function nextTutorialStep() {
+            playSFX(700, 0.1);
+            SIM.tutStep++;
+            if (SIM.tutStep > 4) {
+                SIM.tutorialActive = false;
+                clearTutorialHighlights();
+                removeFloatingBanner();
+                switchTab('learn');
+                speakText("Interactive Academy Walkthrough complete! Houston CAPCOM is now online for live Q and A.");
+            } else {
+                applyTutorialHighlights();
+            }
+        }
+
+        function speakLesson(topic) {
+            playSFX(880, 0.12);
+            stopCapcomVoice();
+
+            let text = "";
+            let targetTab = 'command';
+            let targetElement = '';
+
+            if (topic === 'ECLSS') {
+                text = "Orbit Commander, this is mission control. The Sabatier reaction mixes carbon dioxide with hydrogen to make water. Then electricity splits the water to yield fresh oxygen!";
+                targetTab = 'command';
+                targetElement = 'tut-slider-panel';
+            } else if (topic === 'DUST') {
+                text = "Commander, dust is covering your solar panels, so they make less power. Use Clean Dust Panels to send robots to sweep them.";
+                targetTab = 'command';
+                targetElement = 'eng-bay-panel';
+            } else if (topic === 'RAD') {
+                text = "Big solar flares can send a storm of tiny, fast particles. When you get a flare warning, move the crew into the Storm Shelter. It blocks 90 percent of the radiation.";
+                targetTab = 'command';
+                targetElement = 'shelter-panel-container';
+            } else if (topic === 'TEMP') {
+                text = "Days are super hot and nights are super cold. Heaters use power at night, so save battery power for the dark.";
+                targetTab = 'command';
+                targetElement = 'tut-slider-panel';
+            }
+
+            document.getElementById('capcom-transcript').innerText = `[CAPCOM BROADCAST (${SIM.voiceMode.toUpperCase()} VOICE)]: "${text}"`;
+            document.getElementById('capcom-status-text').innerText = "TRANSMITTING VOICE...";
+            
+            switchTab(targetTab);
+            setTimeout(() => { highlightElementAndScroll(targetElement); }, 100);
+            speakText(text);
+        }
+
+        function stopCapcomVoice() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            document.getElementById('capcom-status-text').innerText = `CAPCOM READY (${SIM.voiceMode.toUpperCase()} VOICE)`;
+        }
+
+        function askCapcomQuestion() {
+            const inputEl = document.getElementById('capcom-query-input');
+            const query = inputEl.value.trim().toLowerCase();
+            if (!query) return;
+
+            let response = "Mission control here. Everything looks OK. Use the sliders to share power between air, plants and water.";
+            let targetTab = 'command';
+            let targetElement = 'tut-slider-panel';
+
+            if (query.includes('dust') || query.includes('clean') || query.includes('panel')) {
+                response = "Dust on the panels means less power. Click Clean Dust Panels in Build and Fix.";
+                targetTab = 'command';
+                targetElement = 'eng-bay-panel';
+            } else if (query.includes('rad') || query.includes('flare') || query.includes('spe') || query.includes('shelter')) {
+                response = "When a flare warning appears, click SHELTER to protect your crew. Leave after the storm so your plants can grow.";
+                targetTab = 'command';
+                targetElement = 'shelter-panel-container';
+            } else if (query.includes('water') || query.includes('o2') || query.includes('oxygen') || query.includes('food') || query.includes('power')) {
+                response = "Making air and recycling water both need power. Share your power using these sliders.";
+                targetTab = 'command';
+                targetElement = 'tut-slider-panel';
+            } else if (query.includes('experiment') || query.includes('lab') || query.includes('science') || query.includes('rp') || query.includes('research')) {
+                response = "Do experiments in the Science Lab to earn credits for upgrades.";
+                targetTab = 'lab';
+                targetElement = 'wrap-lab-panel';
+            } else if (query.includes('sabatier')) {
+                response = "The Sabatier machine mixes carbon dioxide with hydrogen to make water and methane fuel. Then electricity splits the water into oxygen!";
+                targetTab = 'command';
+                targetElement = 'tut-slider-panel';
+            }
+
+            document.getElementById('capcom-transcript').innerText = `[CAPCOM BROADCAST (${SIM.voiceMode.toUpperCase()} VOICE)]: "${response}"`;
+            inputEl.value = '';
+            
+            switchTab(targetTab);
+            setTimeout(() => { highlightElementAndScroll(targetElement); }, 100);
+            speakText(response);
+        }
+
+        function openChallengeDifficultyView() {
+            playSFX(750, 0.1);
+            setWallpaperTheme('challenge');
+            document.getElementById('modal-view-main').classList.add('hidden');
+            document.getElementById('modal-view-challenge').classList.remove('hidden');
+        }
+
+        function backToMainSelector() {
+            playSFX(500, 0.08);
+            setWallpaperTheme('dashboard');
+            document.getElementById('modal-view-challenge').classList.add('hidden');
+            document.getElementById('modal-view-main').classList.remove('hidden');
+        }
+
+        function startChallenge(diff) {
+            playSFX(900, 0.15);
+            resetSolCounter();
+            resetUpgrades();
+            SIM.mode = 'challenge';
+            SIM.difficulty = diff;
+            SIM.site = 'MARS';
+            setWallpaperTheme('challenge');
+            applyModeUI();
+            document.getElementById('challenge-tracker-bar').classList.remove('hidden');
+
+            const badge = document.getElementById('mode-badge');
+            badge.innerText = `CHALLENGE: ${diff}`;
+            
+            if (diff === 'EASY') {
+                badge.className = "px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-emerald-950/80 text-emerald-200 border border-emerald-600";
+                SIM.credits = 1800; SIM.arrayPowerMax = 300; SIM.targetSols = 25;
+                document.getElementById('challenge-target-text').innerText = "Survive 25 sols on Easy with crew health above 75%";
+            } else if (diff === 'MEDIUM') {
+                badge.className = "px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-amber-950/80 text-amber-200 border border-amber-600";
+                SIM.credits = 1000; SIM.arrayPowerMax = 450; SIM.targetSols = 30;
+                document.getElementById('challenge-target-text').innerText = "Survive 30 sols on Medium with crew health above 75%";
+            } else if (diff === 'HARD') {
+                badge.className = "px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-red-950/80 text-red-200 border border-red-600 animate-pulse";
+                SIM.credits = 500; SIM.arrayPowerMax = 800; SIM.targetSols = 45;
+                document.getElementById('challenge-target-text').innerText = "Survive 45 sols on Hard with crew health above 75%";
+            }
+
+            document.getElementById('site-selector-modal').classList.add('hidden');
+            setCommsForSite();
+            logConsole(`CHALLENGE INITIALIZED: ${diff} mode on Mars. Target: ${SIM.targetSols} Sols.`, 'red');
+            speakText(`Challenge initialized on Mars. Survive ${SIM.targetSols} Sols under strict conditions!`);
+            updatePowerAllocations();
+            updateUI();
+            beginMission();
+        }
+
+        function resetSolCounter(userTriggered = false) {
+            SIM.sol = 1.0;
+            SIM.lastEventCheckSol = 1;
+            SIM.crewHealth = 100;
+            SIM.crewDose = 1.2;
+            SIM.dustLevel = 12;
+            SIM.o2Stored = 80;
+            SIM.waterStored = START_WATER;
+            SIM.foodStored = START_FOOD;
+            SIM.batteryStored = 200;
+            SIM.experimentCooldown = 0;
+            SIM.activeEvent = null;
+            SIM.eventDuration = 0;
+            resetFlareSystem();
+            resetMissionStats();
+            SIM.lowWarned = {};
+            SIM.osdrShown = false;
+            setShelterState(false, true);
+            document.getElementById('main-body').classList.remove('critical-red-alert-screen');
+            document.getElementById('critical-alert-banner').classList.add('hidden');
+            if (userTriggered) playSFX(700, 0.15);
+            logConsole(`Outpost time counter reset to Day/Sol 1.0 for site: ${SIM.sites[SIM.site].name}`, 'cyan');
+            updateUI();
+        }
+
+        function restartFullGame() {
+            playSFX(500, 0.2);
+            SIM.trainerSeconds = 0;
+            SIM.credits = 1250;
+            SIM.rp = 0;
+            SIM.arrayPowerMax = 150;
+            SIM.batteryMax = 500;
+            SIM.shieldingLevel = 0.0;
+            resetSolCounter();
+            setWallpaperTheme('dashboard');
+            setSimSpeed(0, true);
+            document.getElementById('modal-end').classList.add('hidden');
+            document.getElementById('site-selector-modal').classList.remove('hidden');
+            logConsole(`FULL GAME RESTART EXECUTED: All RP, Credits, and Session Timers reset.`, 'red');
+        }
+
+        function returnToMainMenu() {
+            playSFX(600, 0.1);
+            setSimSpeed(0, true);
+            setWallpaperTheme('dashboard');
+            document.getElementById('modal-end').classList.add('hidden');
+            document.getElementById('modal-view-challenge').classList.add('hidden');
+            document.getElementById('modal-view-main').classList.remove('hidden');
+            document.getElementById('site-selector-modal').classList.remove('hidden');
+        }
+
+        function selectLocation(loc) {
+            playSFX(700, 0.1);
+            resetSolCounter();
+            resetUpgrades();
+            document.getElementById('challenge-tracker-bar').classList.add('hidden');
+            
+            if (loc === 'sandbox') {
+                SIM.mode = 'sandbox'; SIM.site = 'MARS'; SIM.difficulty = 'STANDARD';
+                setWallpaperTheme('sandbox');
+                document.getElementById('mode-badge').innerText = 'Free Sandbox Lab';
+                document.getElementById('mode-badge').className = 'px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-emerald-950/80 text-emerald-200 border border-emerald-600';
+            } else {
+                SIM.mode = 'guided'; SIM.difficulty = 'STANDARD'; SIM.site = loc.toUpperCase(); SIM.targetSols = 30; SIM.credits = 1250;
+                SIM.arrayPowerMax = SIM.site === 'MARS' ? MARS_GUIDED_ARRAY : 150;
+                setWallpaperTheme(SIM.site === 'MARS' ? 'mars' : 'moon');
+                document.getElementById('mode-badge').innerText = 'Guided Mission';
+                document.getElementById('mode-badge').className = 'px-2.5 py-0.5 text-[10px] font-mono font-bold tracking-widest rounded uppercase bg-cyan-950/80 text-cyan-200 border border-cyan-600';
+            }
+
+            applyModeUI();
+            setCommsForSite();
+            document.getElementById('site-selector-modal').classList.add('hidden');
+            logConsole(`Deployment site selected: ${SIM.sites[SIM.site].name}. Life support active.`, 'cyan');
+            speakText(`Deployment site selected: ${SIM.sites[SIM.site].name}. Station online.`);
+            updatePowerAllocations();
+            updateUI();
+            beginMission();
+        }
+
+        function toggleModeSwitcher() {
+            setSimSpeed(0, true);
+            setWallpaperTheme('dashboard');
+            document.getElementById('modal-view-challenge').classList.add('hidden');
+            document.getElementById('modal-view-main').classList.remove('hidden');
+            document.getElementById('site-selector-modal').classList.remove('hidden'); 
+        }
+
+        function switchTab(tabId) {
+            playSFX(600, 0.05);
+            ['command', 'learn', 'lab', 'data'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).classList.remove('active');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+        }
+
+        function menuIsOpen() {
+            return !document.getElementById('site-selector-modal').classList.contains('hidden') ||
+                   !document.getElementById('modal-end').classList.contains('hidden');
+        }
+
+        function beginMission() {
+            SIM.missionOver = false;
+            setSimSpeed(1, true);
+        }
+
+        function setSimSpeed(speed, silent = false) {
+            if (speed > 0 && (menuIsOpen() || SIM.missionOver)) return;
+            if (!silent) playSFX(500 + speed * 20, 0.08);
+            SIM.speed = speed;
+            [0, 1, 5].forEach(s => {
+                const btn = document.getElementById(`spd-btn-${s}`);
+                if (btn) {
+                    if (s === speed) btn.className = "px-3 py-2 bg-cyan-950 border border-cyan-500/80 text-cyan-200 text-xs font-bold rounded transition";
+                    else btn.className = "px-3 py-2 ui-card-box hover:bg-slate-700/60 border border-slate-500 text-xs font-bold rounded transition text-slate-200";
+                }
+            });
+            document.getElementById('sim-status-badge').innerText = speed === 0 ? "PAUSED (0x)" : `RUNNING (${speed}x)`;
+        }
+
+        function setShelterState(on, silent = false) {
+            SIM.shelterActive = on;
+            const btn = document.getElementById('shelter-btn');
+            if (!btn) return;
+            if (on) {
+                btn.className = "px-4 py-2 rounded-lg font-orbitron text-xs font-bold bg-amber-950 border border-amber-500 text-amber-200 shadow-lg shadow-amber-500/30";
+                btn.innerHTML = `<i class="fa-solid fa-shield-halved mr-1"></i> SHELTER: ON (-90% DOSE)`;
+                if (!silent) {
+                    logConsole(`Crew moved into the Storm Shelter. Radiation -90%, but no food grows and shelter fans use +${SHELTER_FAN_KW} kW.`, 'amber');
+                    speakText("Crew in the storm shelter. Radiation is cut by 90 percent, but the plants are not growing.");
+                }
+            } else {
+                btn.className = "px-4 py-2 rounded-lg font-orbitron text-xs font-bold ui-card-box border border-slate-500 text-slate-200 hover:border-cyan-400 transition";
+                btn.innerHTML = `<i class="fa-solid fa-shield-halved mr-1"></i> SHELTER: OFF (click to hide crew)`;
+                if (!silent) {
+                    logConsole(`Crew left the Storm Shelter. Plants are growing again.`, 'slate');
+                    speakText("Crew left the storm shelter. The plants are growing again.");
+                }
+            }
+        }
+
+        function toggleShelter() {
+            playSFX(400, 0.12, 'square');
+            setShelterState(!SIM.shelterActive);
+        }
+
+        function triggerDrill(eventType) {
+            if (eventType === 'SPE') { startRealFlare(pickRealFlare()); return; }
+            playSFX(300, 0.25, 'sawtooth');
+            SIM.activeEvent = eventType;
+            SIM.eventDuration = 3.0;
+            
+            let title = "", desc = "", hint = "", target = "tut-slider-panel", voiceAlert = "";
+
+            if (eventType === 'STORM' && SIM.site === 'MOON') {
+                // The Moon has no air, so no dust storms. A landing rocket can spray dust, though.
+                SIM.activeEvent = null;
+                SIM.dustLevel = Math.min(100, SIM.dustLevel + 35);
+                title = "LANDER BLASTED DUST";
+                desc = "A supply lander's rocket sprayed Moon dust onto your panels (the Moon has no air, so it has no dust storms)";
+                hint = "Click Clean Dust Panels in Build and Fix.";
+                target = "eng-bay-panel";
+                voiceAlert = "Warning! A landing rocket sprayed dust on the solar panels.";
+            } else if (eventType === 'STORM') {
+                title = "MARS DUST STORM";
+                desc = "Thick dust is blocking 80% of the sunlight. Clean your panels!";
+                hint = "Click Clean Dust Panels in Build and Fix, or turn some sliders down.";
+                target = "eng-bay-panel";
+                voiceAlert = "Warning! Dust storm. Clean solar panels to restore output.";
+            } else if (eventType === 'O2_FAIL') {
+                title = "AIR FILTER BLOCKED";
+                desc = "The air filter is blocked! Fixing it uses 15 kW more power.";
+                hint = "Turn up the Air maker slider, or use less power elsewhere.";
+                target = "tut-slider-panel";
+                voiceAlert = "Warning! The air filter is blocked. The base needs more power!";
+            } else if (eventType === 'THERMAL') {
+                title = "BIG FREEZE (-120°C)";
+                desc = "It suddenly got very cold. The heaters are using 25 kW more power.";
+                hint = "Turn down the plant room lights for a while to save power.";
+                target = "tut-slider-panel";
+                voiceAlert = "Warning! It suddenly got very cold. The heaters are on!";
+            } else if (eventType === 'BREACH') {
+                title = "SPACE ROCK MADE A HOLE";
+                desc = "A tiny space rock made a hole in the wall! Air pumps are using 20 kW more power.";
+                hint = "Turn up the Air maker slider.";
+                target = "shelter-panel-container";
+                voiceAlert = "Warning! A tiny space rock made a hole in the wall! The air pumps are on.";
+            } else if (eventType === 'BATTERY_SHORT') {
+                title = "BATTERY BROKE";
+                desc = "The battery broke and lost half its power!";
+                hint = "Buy another battery in Build and Fix, or use less power.";
+                target = "eng-bay-panel";
+                SIM.batteryStored *= 0.5;
+                voiceAlert = "Warning! Battery short circuit! Fifty percent energy discharge!";
+            }
+
+            SIM.currentIncidentTarget = target;
+            SIM.currentIncidentHint = hint;
+            logConsole(`EMERGENCY DRILL: ${title} — ${desc}`, 'red');
+            updateMissionControlMessage(`[DRILL] ${title}: ${desc}. Advice: ${hint}`);
+            speakText(voiceAlert);
+            updateUI();
+        }
+
+        function applyModeUI() {}
+
+        // Messages from Earth travel at the speed of light. On Mars that takes minutes.
+        // The game is sped up, so we show the wait in real seconds: 1 second for every 2 minutes of real delay.
+        function commWaitSeconds(roundTrip = false) {
+            if (SIM.site !== 'MARS') return 0;
+            return Math.max(1, Math.round((roundTrip ? 2 : 1) * SIM.commDelayMin / 2));
+        }
+
+        function setCommsForSite() {
+            const badge = document.getElementById('comms-delay-badge');
+            if (SIM.site === 'MARS') {
+                SIM.commDelayMin = Math.round(4 + Math.random() * 18); // real Mars range is about 3 to 22 minutes
+                if (badge) {
+                    badge.innerText = `Radio delay to Earth: ${SIM.commDelayMin} min`;
+                    badge.className = "text-[10px] font-mono text-amber-200 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-600";
+                }
+                logConsole(`Mars is far away today: radio messages to Earth take ${SIM.commDelayMin} minutes. Help from Mission Control will arrive late, so watch your meters yourself!`, 'amber');
+            } else {
+                SIM.commDelayMin = 0.02;
+                if (badge) {
+                    badge.innerText = "Radio delay to Earth: 1.3 s";
+                    badge.className = "text-[10px] font-mono text-cyan-200 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-700";
+                }
+            }
+        }
+
+        let commTimers = [];
+        function updateMissionControlMessage(msgText, fromEarth = true) {
+            const el = document.getElementById('mission-control-text');
+            if (!el) return;
+            const wait = fromEarth ? commWaitSeconds() : 0;
+            if (wait === 0) { el.innerText = msgText; return; }
+            el.innerText = `📡 A message from Earth is on its way... It left Earth ${SIM.commDelayMin} minutes ago (in this sped-up game: ${wait} seconds).`;
+            const missionId = SIM.missionId;
+            commTimers.push(setTimeout(() => {
+                if (SIM.missionId !== missionId) return;
+                el.innerText = `[Message from Earth, sent ${SIM.commDelayMin} min ago] ${msgText}`;
+            }, wait * 1000));
+        }
+
+        function clearCommTimers() { commTimers.forEach(t => clearTimeout(t)); commTimers = []; }
+
+        function resetUpgrades() {
+            SIM.batteryMax = 500;
+            SIM.batteryStored = 200;
+            SIM.shieldingLevel = 0.0;
+            SIM.missionId = (SIM.missionId || 0) + 1;
+            clearCommTimers();
+            const mc = document.getElementById('mission-control-text');
+            if (mc) mc.innerText = "Welcome Junior Astronaut! Share your power between air, plants and water. Every choice has a cost!";
+        }
+
+        function toggleSupplyDetails(forceOpen = false) {
+            const box = document.getElementById('supply-details');
+            const btn = document.getElementById('details-toggle-btn');
+            const note = document.getElementById('details-collapsed-note');
+            const open = forceOpen || box.classList.contains('hidden');
+            box.classList.toggle('hidden', !open);
+            note.classList.toggle('hidden', open);
+            btn.innerText = open ? 'Hide details' : 'Show details';
+        }
+
+        function highlightSolutionFromDrawer() {
+            playSFX(750, 0.12);
+            switchTab('command');
+            const wait = commWaitSeconds(true);
+            const target = SIM.currentIncidentTarget, hint = SIM.currentIncidentHint, missionId = SIM.missionId;
+            if (wait === 0) {
+                if (target) highlightElementAndScroll(target);
+                speakText(`Capcom Solution: ${hint}`);
+                return;
+            }
+            const el = document.getElementById('mission-control-text');
+            if (el) el.innerText = `📡 Asking Earth for help... Your question takes ${SIM.commDelayMin} min to get there and the answer takes ${SIM.commDelayMin} min to come back (in this sped-up game: ${wait} seconds). Real Mars crews must often decide on their own!`;
+            commTimers.push(setTimeout(() => {
+                if (SIM.missionId !== missionId) return;
+                if (el) el.innerText = `[Answer from Earth] ${hint}`;
+                if (target) highlightElementAndScroll(target);
+                speakText(`Answer from Earth: ${hint}`);
+            }, wait * 1000));
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.key === 'm' || e.key === 'M') {
+                stopCapcomVoice();
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                setSimSpeed(SIM.speed === 0 ? 1 : 0);
+            } else if (e.key === '1') {
+                setSimSpeed(1);
+            } else if (e.key === '2') {
+                setSimSpeed(5);
+            } else if (e.key === 's' || e.key === 'S') {
+                toggleShelter();
+            }
+        });
+
+        function openShortcutsModal() {
+            document.getElementById('shortcuts-modal').classList.remove('hidden');
+        }
+
+        function closeShortcutsModal() {
+            document.getElementById('shortcuts-modal').classList.add('hidden');
+        }
+
+        function cleanPanels() {
+            if (SIM.shelterActive) {
+                alert("The crew is in the storm shelter, so nobody can go outside to clean the panels!");
+                speakText("Crew is sheltered. Cannot perform outside panel cleaning.");
+                return;
+            }
+            if (SIM.credits < 50 && SIM.mode !== 'sandbox') return;
+            playSFX(900, 0.15);
+            if (SIM.mode !== 'sandbox') SIM.credits -= 50;
+            SIM.dustLevel = Math.max(0, SIM.dustLevel - 25);
+            SIM.stats.panelsCleaned++;
+            logConsole(`Robots swept the dust off the solar panels.`, 'emerald');
+            updateMissionControlMessage("Solar panels have been cleaned! Solar power output restored.", false);
+            speakText("Solar panels are clean.");
+            updateUI();
+        }
+
+        function buyUpgrade(type) {
+            let cost = type === 'SOLAR' ? 400 : type === 'BATTERY' ? 350 : 500;
+            if (type === 'SHIELD' && SIM.shieldingLevel >= 0.75) {
+                alert("The soil wall shield is already as thick as it can be!");
+                return;
+            }
+            if (SIM.credits < cost && SIM.mode !== 'sandbox') return;
+            playSFX(1100, 0.2);
+            if (SIM.mode !== 'sandbox') SIM.credits -= cost;
+            if (type === 'SOLAR') { SIM.arrayPowerMax += 30; speakText("Solar array upgrade purchased."); }
+            else if (type === 'BATTERY') { SIM.batteryMax += 200; SIM.batteryStored += 100; speakText("Battery storage upgrade purchased."); }
+            else if (type === 'SHIELD') {
+                SIM.shieldingLevel = Math.min(0.75, SIM.shieldingLevel + 0.25);
+                speakText("Soil wall shield added.");
+            }
+            updateUI();
+        }
+
+        function runExperiment(powerNeeded, rpGained, id, o2Needed = 0) {
+            if (SIM.shelterActive) {
+                alert("The crew is in the storm shelter, so nobody can do experiments right now!");
+                speakText("Crew is sheltered. Cannot conduct outside experiments.");
+                return;
+            }
+            if (SIM.experimentCooldown > 0) {
+                const unit = SIM.sites[SIM.site].timeLabel;
+                alert(`Experiment on cooldown! Please wait ${SIM.experimentCooldown.toFixed(1)} more ${unit}(s).`);
+                return;
+            }
+            if (SIM.batteryStored < powerNeeded) {
+                alert("Not enough battery power to do this experiment!");
+                return;
+            }
+            if (SIM.o2Stored < o2Needed + 10) {
+                alert("Not enough oxygen! The crew breathes harder when they work, so experiments use oxygen too.");
+                return;
+            }
+
+            playSFX(1000, 0.2);
+            SIM.batteryStored -= powerNeeded;
+            SIM.o2Stored -= o2Needed;
+            SIM.rp += rpGained;
+            SIM.credits += Math.floor(rpGained * 1.5);
+            SIM.experimentCooldown = 2.0;
+
+            logConsole(`EXPERIMENT DONE: Earned ${rpGained} research points and ${Math.floor(rpGained * 1.5)} credits. Used ${powerNeeded} kWh of battery and ${o2Needed} kg of oxygen.`, 'emerald');
+            speakText(`Experiment complete. Earned ${rpGained} Research Points.`);
+            updateUI();
+        }
+
+        function updatePowerAllocations() {
+            SIM.allocO2 = parseInt(document.getElementById('slider-o2').value);
+            SIM.allocFood = parseInt(document.getElementById('slider-food').value);
+            SIM.allocWater = parseInt(document.getElementById('slider-water').value);
+
+            const timeLabel = SIM.sites[SIM.site] ? SIM.sites[SIM.site].timeLabel.toLowerCase() : 'sol';
+            
+            document.getElementById('slider-o2-kw').innerText = SIM.allocO2;
+            document.getElementById('slider-o2-yield').innerText = `+${(SIM.allocO2 * 0.12).toFixed(1)} kg/${timeLabel}`;
+            
+            document.getElementById('slider-food-kw').innerText = SIM.allocFood;
+            document.getElementById('slider-food-yield').innerText = `+${(SIM.allocFood * 0.08).toFixed(1)} kg/${timeLabel}`;
+            
+            document.getElementById('slider-water-kw').innerText = SIM.allocWater;
+            const waterRecyclePct = Math.min(98, (SIM.allocWater / 40) * 98);
+            document.getElementById('slider-water-yield').innerText = `${waterRecyclePct.toFixed(0)}% reused`;
+        }
+
+        function logConsole(text, color = 'slate') {
+            const consoleEl = document.getElementById('console-log');
+            if (!consoleEl) return;
+            const entry = document.createElement('div');
+            let colorClass = 'text-slate-200';
+            if (color === 'red') colorClass = 'text-red-300 font-bold';
+            if (color === 'amber') colorClass = 'text-amber-300 font-bold';
+            if (color === 'emerald') colorClass = 'text-emerald-300';
+            if (color === 'cyan') colorClass = 'text-cyan-300';
+            entry.className = colorClass;
+            const label = SIM.sites[SIM.site].timeLabel.toUpperCase();
+            entry.innerText = `[${label} ${SIM.sol.toFixed(1)}] ${text}`;
+            consoleEl.appendChild(entry);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function checkDailyTacticalEvents() {
+            const currentSolInt = Math.floor(SIM.sol);
+            if (currentSolInt >= 10 && !SIM.osdrShown && SIM.targetSols < 1000) {
+                SIM.osdrShown = true;
+                logConsole(OSDR_FACT, 'cyan');
+            }
+            if (currentSolInt > SIM.lastEventCheckSol && currentSolInt % 8 === 0) {
+                SIM.lastEventCheckSol = currentSolInt;
+                const events = [
+                    { title: "AIR FILTER NEEDS CLEANING", desc: "Cleaning the air filter used up some oxygen.", hint: "Turn up the Air maker slider.", target: "tut-slider-panel", o2Drain: 10 },
+                    { title: "POWER LEAK", desc: "A broken wire drained some battery power.", hint: "Watch your battery, or buy another battery in Build and Fix.", target: "eng-bay-panel", batDrain: 40 }
+                ];
+                if (SIM.site === 'MARS') events.push({ title: "MARS DUST STORM", desc: "A dust storm is blocking most of the sunlight for a while.", hint: "Turn some sliders down to save the battery, and clean the panels when the storm is over.", target: "tut-slider-panel", storm: true });
+                const randEvt = events[Math.floor(Math.random() * events.length)];
+                if (randEvt.storm) { SIM.activeEvent = 'STORM'; SIM.eventDuration = 2.0; }
+                if (randEvt.o2Drain) SIM.o2Stored = Math.max(0, SIM.o2Stored - randEvt.o2Drain);
+                if (randEvt.batDrain) SIM.batteryStored = Math.max(0, SIM.batteryStored - randEvt.batDrain);
+
+                SIM.currentIncidentTarget = randEvt.target;
+                SIM.currentIncidentHint = randEvt.hint;
+                const timeLabel = SIM.sites[SIM.site].timeLabel;
+                logConsole(`EVENT [${timeLabel} ${currentSolInt}]: ${randEvt.title} — ${randEvt.desc}`, 'amber');
+                updateMissionControlMessage(`${randEvt.title}: ${randEvt.desc}. Solution: ${randEvt.hint}`);
+                speakText(`Surprise! ${randEvt.title}. ${randEvt.desc}`);
+            }
+        }
+
+        // Turn a flare class like "X2.8", "M5.1" or "C3.0" into X-size units.
+        // M is 10 times weaker than X, and C is 100 times weaker.
+        function flareClassToX(classType) {
+            const m = /^([XMC])\s*([0-9.]+)/i.exec(classType || '');
+            if (!m) return 0;
+            const scale = { X: 1, M: 0.1, C: 0.01 }[m[1].toUpperCase()];
+            return parseFloat(m[2]) * scale;
+        }
+
+        async function fetchLiveNASAFlares() {
+            const badge = document.getElementById('nasa-api-badge');
+            try {
+                const end = new Date();
+                const start = new Date(end.getTime() - 60 * 24 * 3600 * 1000);
+                const fmt = d => d.toISOString().slice(0, 10);
+                const response = await fetch(`https://api.nasa.gov/DONKI/FLR?startDate=${fmt(start)}&endDate=${fmt(end)}&api_key=DEMO_KEY`);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (!Array.isArray(data)) return;
+                // Keep only strong flares (M5 or bigger) so the game stays exciting, newest first, at most 2.
+                const recent = data
+                    .map(item => ({ item, x: flareClassToX(item.classType) }))
+                    .filter(f => f.x >= 0.5)
+                    .sort((a, b) => (b.item.beginTime || '').localeCompare(a.item.beginTime || ''))
+                    .slice(0, 2)
+                    .map(({ item, x }) => ({
+                        date: new Date(item.beginTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        cls: x,
+                        label: item.classType,
+                        note: "Recent flare, downloaded from NASA DONKI when you opened the game.",
+                        dose: Math.round(x * FLARE_DOSE_PER_X),
+                        source: 'downloaded'
+                    }));
+                if (recent.length === 0) return;
+                REAL_FLARES.push(...recent);
+                renderRealFlareTable();
+                if (badge) {
+                    badge.innerText = `${recent.length} NEW FLARE(S) DOWNLOADED FROM NASA DONKI`;
+                    badge.className = "text-[10px] bg-emerald-950/80 text-emerald-200 border border-emerald-600 px-2 py-0.5 rounded";
+                }
+            } catch (err) { /* No internet: the five built-in real flares are used. */ }
+        }
+
+        function resetFlareSystem() {
+            SIM.flareWarning = false;
+            SIM.flareWarningLeft = 0;
+            SIM.radStormLeft = 0;
+            SIM.currentFlare = null;
+            SIM.lastFlareIndex = -1;
+            SIM.nextFlareSol = 3 + Math.random() * 2;
+            updateFlareStatus();
+        }
+
+        function pickRealFlare() {
+            let i;
+            do { i = Math.floor(Math.random() * REAL_FLARES.length); } while (REAL_FLARES.length > 1 && i === SIM.lastFlareIndex);
+            SIM.lastFlareIndex = i;
+            return REAL_FLARES[i];
+        }
+
+        function startRealFlare(flare) {
+            if (SIM.flareWarning || SIM.radStormLeft > 0) return;
+            playSFX(300, 0.3, 'sawtooth');
+            SIM.currentFlare = flare;
+            SIM.flareWarning = true;
+            SIM.flareWarningLeft = FLARE_WARNING_SOLS;
+            SIM.stats.flaresTotal++;
+            SIM.stats.thisFlareUnsheltered = 0;
+            SIM.currentIncidentTarget = 'shelter-panel-container';
+            SIM.currentIncidentHint = 'Move the crew into the Storm Shelter before the particles arrive.';
+            const msg = `Real NASA flare ${flare.label} from ${flare.date}. Particle storm arrives in about 6 hours (+${flare.dose} µSv/h).`;
+            logConsole(`SOLAR FLARE SEEN: ${msg}`, 'red');
+            updateMissionControlMessage(`DANGER! NASA Flare ${flare.label} detected. Move the crew into the Storm Shelter before the storm arrives!`);
+            if (SIM.site === 'MARS') logConsole(`Your base's own sensor spotted the flare. Advice from Earth will take ${SIM.commDelayMin} minutes to arrive.`, 'amber');
+            speakText(`Solar flare seen! A real flare from ${flare.date}. The particle storm arrives in about 6 hours. Get ready to shelter!`);
+            updateFlareStatus();
+        }
+
+        function updateFlareSystem(dtSol) {
+            if (SIM.flareWarning) {
+                SIM.flareWarningLeft -= dtSol;
+                if (SIM.flareWarningLeft <= 0) {
+                    SIM.flareWarning = false;
+                    SIM.radStormLeft = FLARE_STORM_SOLS;
+                    logConsole(`PARTICLE STORM ARRIVING from ${SIM.currentFlare.label} flare.`, 'red');
+                    if (!SIM.shelterActive) {
+                        updateMissionControlMessage(`BASE ALARM! Particle storm is here! Crew is NOT sheltered! Click SHELTER now!`, false);
+                        speakText("The particle storm is here! Get to the shelter!");
+                    }
+                }
+            } else if (SIM.radStormLeft > 0) {
+                if (!SIM.shelterActive) { SIM.stats.thisFlareUnsheltered += dtSol; SIM.stats.unshelteredStormSols += dtSol; }
+                SIM.radStormLeft -= dtSol;
+                if (SIM.radStormLeft <= 0) {
+                    SIM.radStormLeft = 0;
+                    if (SIM.stats.thisFlareUnsheltered < 0.1) SIM.stats.flaresSheltered++;
+                    logConsole(`Particle storm from ${SIM.currentFlare.label} flare is over. Safe to leave shelter.`, 'emerald');
+                    updateMissionControlMessage(`Base sensor: the particle storm is over. You can turn off SHELTER now so plants grow!`, false);
+                    if (SIM.shelterActive) speakText("The particle storm is over. You can leave the shelter so the plants can grow.");
+                    SIM.currentFlare = null;
+                    SIM.nextFlareSol = SIM.sol + 3 + Math.random() * 4;
+                }
+            } else if (SIM.sol >= SIM.nextFlareSol) {
+                startRealFlare(pickRealFlare());
+            }
+            updateFlareStatus();
+        }
+
+        const SUPPLY_WARNINGS = [
+            { key: 'water', name: 'Water', pct: () => SIM.waterStored / SIM.waterMax, hint: 'Turn up the Water recycler slider.' },
+            { key: 'o2',    name: 'Oxygen', pct: () => SIM.o2Stored / SIM.o2Max,     hint: 'Turn up the Air maker slider.' },
+            { key: 'food',  name: 'Food',  pct: () => SIM.foodStored / SIM.foodMax,  hint: 'Turn up the Greenhouse Lights slider, and leave shelter when safe.' }
+        ];
+
+        function checkLowSupplies() {
+            if (SIM.mode === 'sandbox' || SIM.targetSols > 1000) return;
+            SIM.lowWarned = SIM.lowWarned || {};
+            SUPPLY_WARNINGS.forEach(sw => {
+                const p = sw.pct();
+                if (p < 0.25 && !SIM.lowWarned[sw.key]) {
+                    SIM.lowWarned[sw.key] = true;
+                    SIM.currentIncidentTarget = 'tut-slider-panel';
+                    SIM.currentIncidentHint = sw.hint;
+                    logConsole(`LOW SUPPLY: ${sw.name} is below 25%!`, 'amber');
+                    toggleSupplyDetails(true);
+                    updateMissionControlMessage(`WARNING: ${sw.name} supply is running low! Advice: ${sw.hint}`);
+                    speakText(`Warning. ${sw.name} is running low.`);
+                } else if (p > 0.40) {
+                    SIM.lowWarned[sw.key] = false;
+                }
+            });
+        }
+
+        function updateFlareStatus() {
+            const el = document.getElementById('flare-status');
+            if (!el) return;
+            if (SIM.flareWarning && SIM.currentFlare) {
+                const hours = Math.max(0, SIM.flareWarningLeft * 24).toFixed(0);
+                el.className = "text-[10px] font-mono text-amber-300 font-bold mt-1 animate-pulse";
+                el.innerText = `Flare ${SIM.currentFlare.label} seen! Particles arrive in ~${hours} h.`;
+            } else if (SIM.radStormLeft > 0 && SIM.currentFlare) {
+                const hours = Math.max(0, SIM.radStormLeft * 24).toFixed(0);
+                el.className = "text-[10px] font-mono text-red-300 font-bold mt-1 animate-pulse";
+                el.innerText = `PARTICLE STORM! ${hours} h left. Stay sheltered.`;
+            } else {
+                el.className = "text-[10px] font-mono text-slate-300 mt-1";
+                el.innerText = SIM.shelterActive ? "No flare now. Plants paused during shelter." : "No solar flare right now.";
+            }
+        }
+
+        function renderRealFlareTable() {
+            const box = document.getElementById('real-flare-table');
+            if (!box) return;
+            box.innerHTML = REAL_FLARES.map(f => `
+                <div class="flex flex-wrap justify-between gap-2 p-2 bg-slate-950/85 rounded border border-cyan-900/50 text-[11px]">
+                    <span class="text-amber-300 font-bold">${f.label}</span>
+                    <span class="text-slate-100">${f.date}</span>
+                    <span class="text-red-300">+${f.dose} µSv/h in game</span>
+                    <span class="text-[10px] ${f.source === 'downloaded' ? 'text-emerald-300' : 'text-cyan-300'}">${f.source === 'downloaded' ? 'Downloaded from DONKI' : 'Built into the game'}</span>
+                    <span class="text-slate-300 w-full">${f.note}</span>
+                </div>`).join('');
+        }
+
+        function simTick() {
+            if (SIM.speed === 0) return;
+
+            const dtSol = (0.05 * SIM.speed) / 5.0;
+            SIM.sol += dtSol;
+
+            if (SIM.experimentCooldown > 0) {
+                SIM.experimentCooldown = Math.max(0, SIM.experimentCooldown - dtSol);
+            }
+
+            checkDailyTacticalEvents();
+            updateFlareSystem(dtSol);
+
+            const site = SIM.sites[SIM.site];
+
+            let dustIncrease = SIM.site === 'MARS' ? 0.15 : 0.05;
+            if (SIM.mode === 'challenge' && SIM.difficulty === 'HARD') dustIncrease *= 2.5;
+            if (SIM.activeEvent === 'STORM' && SIM.site === 'MARS') dustIncrease *= 5.0;
+            SIM.dustLevel = Math.min(100, SIM.dustLevel + dustIncrease * dtSol);
+
+            const hourOfDay = (SIM.sol % 1) * 24;
+            let solarSunlight = 1.0;
+            if (hourOfDay < 6 || hourOfDay > 18) {
+                solarSunlight = 0.0;
+            } else {
+                const hourAngle = ((hourOfDay - 6) / 12) * Math.PI;
+                solarSunlight = Math.max(0, Math.sin(hourAngle));
+            }
+
+            let solarFlux = site.solarFlux;
+            let solarOutput = SIM.arrayPowerMax * (solarFlux / 1361) * solarSunlight * (1 - (SIM.dustLevel / 100) * 0.6);
+            if (SIM.activeEvent === 'STORM' && SIM.site === 'MARS') solarOutput *= 0.2;
+
+            let loadKw = SIM.allocO2 + SIM.allocFood + SIM.allocWater + SIM.allocBase;
+            if (SIM.shelterActive) loadKw += SHELTER_FAN_KW;
+            if (SIM.activeEvent === 'THERMAL') loadKw += 25;
+            if (SIM.activeEvent === 'O2_FAIL') loadKw += 15;
+            if (SIM.activeEvent === 'BREACH') loadKw += 20;
+
+            const netKw = solarOutput - loadKw;
+            
+            SIM.batteryStored += netKw * (dtSol * 24);
+            SIM.batteryStored = Math.max(0, Math.min(SIM.batteryMax, SIM.batteryStored));
+
+            let powerRatio = 1.0;
+            if (SIM.batteryStored <= 0 && netKw < 0) {
+                powerRatio = Math.max(0, solarOutput / loadKw);
+            }
+
+            let o2Drain = SIM.crewCount * 0.84;
+            if (SIM.activeEvent === 'BREACH' && !SIM.shelterActive) o2Drain += 10.0;
+
+            const o2Net = ((SIM.allocO2 * powerRatio) * 0.12) - o2Drain;
+            SIM.o2Stored = Math.max(0, Math.min(SIM.o2Max, SIM.o2Stored + o2Net * dtSol));
+
+            const foodGrowth = SIM.shelterActive ? 0 : (SIM.allocFood * powerRatio) * 0.08;
+            const foodNet = foodGrowth - (SIM.crewCount * 0.62);
+            SIM.foodStored = Math.max(0, Math.min(SIM.foodMax, SIM.foodStored + foodNet * dtSol));
+
+            const waterRecyclePct = Math.min(0.98, ((SIM.allocWater * powerRatio) / 40) * 0.98);
+            const waterConsumed = SIM.crewCount * 3.0;
+            const waterNet = (waterConsumed * waterRecyclePct) - waterConsumed;
+            SIM.waterStored = Math.max(0, Math.min(SIM.waterMax, SIM.waterStored + waterNet * dtSol));
+
+            let radRate = site.baseGCR;
+            if (SIM.radStormLeft > 0 && SIM.currentFlare) radRate += SIM.currentFlare.dose;
+            let effectiveRad = radRate * (1 - SIM.shieldingLevel);
+            if (SIM.shelterActive) effectiveRad *= 0.10;
+
+            const doseInc = (effectiveRad / 1000.0) * (dtSol * 24.0);
+            SIM.crewDose += doseInc;
+
+            let healthDelta = 0;
+            const drainMultiplier = SIM.difficulty === 'EASY' ? 0.7 : (SIM.difficulty === 'HARD' ? 1.5 : 1.0);
+
+            if (SIM.o2Stored <= 0) healthDelta -= 45.0 * drainMultiplier;
+            if (SIM.waterStored <= 0) healthDelta -= 25.0 * drainMultiplier;
+            if (SIM.foodStored <= 0) healthDelta -= 15.0 * drainMultiplier;
+            if (SIM.crewDose > DOSE_WARN) healthDelta -= 15.0 * drainMultiplier;
+            if (SIM.crewDose > DOSE_LIMIT) healthDelta -= 35.0 * drainMultiplier;
+
+            const st = SIM.stats;
+            if (SIM.shelterActive) st.shelterSols += dtSol;
+            if (powerRatio < 1.0) st.brownoutSols += dtSol;
+            st.lowestO2 = Math.min(st.lowestO2, SIM.o2Stored / SIM.o2Max * 100);
+            st.lowestFood = Math.min(st.lowestFood, SIM.foodStored / SIM.foodMax * 100);
+            st.lowestWater = Math.min(st.lowestWater, SIM.waterStored / SIM.waterMax * 100);
+            if (SIM.o2Stored <= 0) st.o2RanOut = true;
+            if (SIM.foodStored <= 0) st.foodRanOut = true;
+            if (SIM.waterStored <= 0) st.waterRanOut = true;
+            checkLowSupplies();
+
+            if (SIM.mode === 'challenge') {
+                if (SIM.crewDose >= DOSE_LIMIT) {
+                    endGame(false);
+                    return;
+                }
+            }
+
+            if (healthDelta === 0 && SIM.crewHealth < 100 && SIM.o2Stored > 20 && SIM.waterStored > 50) {
+                healthDelta = 1.0;
+            }
+
+            if (SIM.mode === 'sandbox' || SIM.targetSols > 1000) SIM.crewHealth = 100;
+            else SIM.crewHealth = Math.max(0, Math.min(100, SIM.crewHealth + healthDelta * dtSol));
+
+            const mainBody = document.getElementById('main-body');
+            const alertBanner = document.getElementById('critical-alert-banner');
+            if (SIM.crewHealth < 25 || SIM.o2Stored <= 0) {
+                mainBody.classList.add('critical-red-alert-screen');
+                alertBanner.classList.remove('hidden');
+            } else {
+                mainBody.classList.remove('critical-red-alert-screen');
+                alertBanner.classList.add('hidden');
+            }
+
+            if (SIM.activeEvent) {
+                SIM.eventDuration -= dtSol;
+                if (SIM.eventDuration <= 0) {
+                    logConsole(`The emergency is over. Things are back to normal.`, 'emerald');
+                    updateMissionControlMessage("The emergency is over. Things are back to normal.", false);
+                    SIM.activeEvent = null;
+                }
+            }
+
+            if (SIM.mode !== 'sandbox' && SIM.targetSols < 1000) {
+                if (SIM.crewHealth <= 0) { endGame(false); return; }
+                else if (SIM.sol >= SIM.targetSols) {
+                    if (SIM.mode === 'challenge' && SIM.crewHealth < 75) endGame(false);
+                    else endGame(true);
+                    return;
+                }
+            }
+
+            updateUI(solarOutput, loadKw, effectiveRad, powerRatio);
+        }
+
+        function updateUI(solarKw = 120, loadKw = 85, radRate = 0.5, powerRatio = 1.0) {
+            const timeUnit = SIM.sites[SIM.site].timeLabel;
+            const hour = Math.floor((SIM.sol % 1) * 24);
+            const hourStr = hour < 10 ? `0${hour}:00` : `${hour}:00`;
+            const solDisplayStr = SIM.targetSols > 1000 ? `${timeUnit} ${SIM.sol.toFixed(1)} <span class="text-xs text-purple-300">(Unlimited)</span>` : `${timeUnit} ${SIM.sol.toFixed(1)} <span class="text-xs text-slate-300">(${hourStr})</span>`;
+            document.getElementById('sol-display').innerHTML = solDisplayStr;
+            document.getElementById('credits-display').innerText = `${Math.floor(SIM.credits)} CR`;
+            document.getElementById('rp-display').innerText = `${SIM.rp} RP`;
+            document.getElementById('reset-counter-btn-label').innerText = `Reset ${timeUnit}s`;
+
+            document.getElementById('site-display-name').innerText = `${SIM.sites[SIM.site].name} — Base data`;
+
+            if (SIM.mode === 'challenge') {
+                document.getElementById('ch-sol-progress').innerText = `${SIM.sol.toFixed(1)} / ${SIM.targetSols} ${timeUnit}s`;
+            }
+
+            const solarPct = Math.min(100, (solarKw / SIM.arrayPowerMax) * 100);
+            document.getElementById('gauge-solar-arc').setAttribute('stroke-dasharray', `${solarPct}, 100`);
+            document.getElementById('gauge-solar-val').innerText = solarKw.toFixed(1);
+
+            const brownoutEl = document.getElementById('brownout-status-text');
+            if (solarKw < loadKw && SIM.batteryStored <= 0) {
+                brownoutEl.innerText = "NOT ENOUGH POWER!";
+                brownoutEl.className = "text-xs font-mono text-red-300 font-bold animate-pulse";
+            } else {
+                brownoutEl.innerText = `Powering Base (${loadKw.toFixed(0)} kW load)`;
+                brownoutEl.className = "text-xs font-mono text-slate-200 font-bold";
+            }
+
+            const healthPct = SIM.crewHealth;
+            document.getElementById('gauge-supplies-arc').setAttribute('stroke-dasharray', `${healthPct}, 100`);
+            document.getElementById('bar-health-val').innerText = `${healthPct.toFixed(0)}%`;
+
+            const radDisplay = radRate;
+            const radPct = Math.min(100, (radDisplay / 500) * 100);
+            document.getElementById('gauge-rad-arc').setAttribute('stroke-dasharray', `${radPct}, 100`);
+            document.getElementById('gauge-rad-val').innerText = radDisplay.toFixed(1);
+
+            const radDesc = document.getElementById('rad-status-desc');
+            if (SIM.radStormLeft > 0) {
+                radDesc.innerText = "DANGER: Particle Storm Active!";
+                radDesc.className = "text-xs font-mono text-red-300 font-bold animate-pulse";
+            } else if (SIM.shelterActive) {
+                radDesc.innerText = "Crew Protected in Shelter";
+                radDesc.className = "text-xs font-mono text-amber-200 font-bold";
+            } else {
+                radDesc.innerText = "Normal space radiation";
+                radDesc.className = "text-xs font-mono text-slate-200 font-bold";
+            }
+
+            const batPct = (SIM.batteryStored / SIM.batteryMax) * 100;
+            document.getElementById('bar-battery-val').innerText = `${Math.floor(SIM.batteryStored)} / ${SIM.batteryMax} kWh (${batPct.toFixed(0)}%)`;
+            document.getElementById('bar-battery-fill').style.width = `${batPct}%`;
+
+            const o2Pct = (SIM.o2Stored / SIM.o2Max) * 100;
+            document.getElementById('bar-o2-val').innerText = `${SIM.o2Stored.toFixed(1)} / ${SIM.o2Max} kg (${o2Pct.toFixed(0)}%)`;
+            document.getElementById('bar-o2-fill').style.width = `${o2Pct}%`;
+
+            const waterPct = (SIM.waterStored / SIM.waterMax) * 100;
+            document.getElementById('bar-water-val').innerText = `${Math.floor(SIM.waterStored)} / ${SIM.waterMax} L (${waterPct.toFixed(0)}%)`;
+            document.getElementById('bar-water-fill').style.width = `${waterPct}%`;
+
+            const foodPct = (SIM.foodStored / SIM.foodMax) * 100;
+            document.getElementById('bar-food-val').innerText = `${Math.floor(SIM.foodStored)} / ${SIM.foodMax} kg (${foodPct.toFixed(0)}%)`;
+            document.getElementById('bar-food-fill').style.width = `${foodPct}%`;
+
+            document.getElementById('bar-dust-val').innerText = `${SIM.dustLevel.toFixed(0)}% dusty`;
+            document.getElementById('bar-dust-fill').style.width = `${SIM.dustLevel}%`;
+
+            const dosePct = Math.min(100, (SIM.crewDose / DOSE_LIMIT) * 100);
+            document.getElementById('bar-dose-val').innerText = `${SIM.crewDose.toFixed(1)} / ${DOSE_LIMIT} mSv`;
+            document.getElementById('bar-dose-fill').style.width = `${dosePct}%`;
+        }
+
+        function buildAssessment() {
+            const st = SIM.stats;
+            const unit = SIM.sites[SIM.site].timeLabel.toLowerCase();
+            const items = [];
+
+            if (st.o2RanOut || st.foodRanOut || st.waterRanOut) {
+                const out = [st.o2RanOut && 'oxygen', st.foodRanOut && 'food', st.waterRanOut && 'water'].filter(Boolean).join(', ');
+                items.push(`<strong>Life support:</strong> The base ran out of ${out}. Lowest levels: oxygen ${st.lowestO2.toFixed(0)}%, food ${st.lowestFood.toFixed(0)}%, water ${st.lowestWater.toFixed(0)}%.`);
+            } else {
+                items.push(`<strong>Life support:</strong> Oxygen, food and water never ran out. Lowest levels: oxygen ${st.lowestO2.toFixed(0)}%, food ${st.lowestFood.toFixed(0)}%, water ${st.lowestWater.toFixed(0)}%.`);
+            }
+
+            items.push(`<strong>Power:</strong> The base was short of power for ${st.brownoutSols.toFixed(1)} ${unit}s. Solar panels were cleaned ${st.panelsCleaned} time(s).`);
+
+            if (st.flaresTotal === 0) {
+                items.push(`<strong>Radiation:</strong> No solar flares happened. Total crew dose: ${SIM.crewDose.toFixed(1)} mSv.`);
+            } else {
+                items.push(`<strong>Radiation:</strong> ${st.flaresSheltered} of ${st.flaresTotal} real solar flares were spent safely in the shelter. Crew was outside the shelter during particle storms for ${(st.unshelteredStormSols * 24).toFixed(0)} hours. Total crew dose: ${SIM.crewDose.toFixed(1)} mSv. Time spent in shelter: ${st.shelterSols.toFixed(1)} ${unit}s.`);
+            }
+            return items.map((t, i) => `<p>${i + 1}. ${t}</p>`).join('');
+        }
+
+        function downloadMissionReportPDF() {
+            playSFX(900, 0.15);
+            const won = SIM.lastResult === true;
+
+            if (won) {
+                const playerName = prompt("Enter Commander Name for Mission Certificate:", "Junior Astronaut");
+                document.getElementById('pdf-cert-name').innerText = (playerName && playerName.trim()) ? playerName.trim().toUpperCase() : 'JUNIOR ASTRONAUT';
+            }
+
+            const timeUnit = SIM.sites[SIM.site].timeLabel;
+            const modeText = SIM.mode === 'challenge' ? `CHALLENGE (${SIM.difficulty})` : (SIM.mode === 'sandbox' ? 'FREE SANDBOX' : 'GUIDED MISSION');
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+            const resultEl = document.getElementById('pdf-result');
+            resultEl.innerText = won ? 'MISSION ACCOMPLISHED' : `MISSION FAILED (${SIM.lastCause || 'crew could not survive'})`;
+            resultEl.style.color = won ? '#4ade80' : '#f87171';
+            document.getElementById('pdf-site').innerText = SIM.sites[SIM.site].name;
+            document.getElementById('pdf-mode').innerText = modeText;
+            document.getElementById('pdf-time').innerText = `${SIM.sol.toFixed(1)} / ${SIM.targetSols} ${timeUnit}s`;
+            document.getElementById('pdf-vitals').innerText = `${SIM.crewHealth.toFixed(0)}%`;
+            document.getElementById('pdf-rad').innerText = `${SIM.crewDose.toFixed(1)} mSv`;
+            document.getElementById('pdf-credits').innerText = `${Math.floor(SIM.credits)} CR`;
+            document.getElementById('pdf-rp').innerText = `${SIM.rp} RP`;
+            document.getElementById('pdf-duration').innerText = `${Math.floor(SIM.trainerSeconds / 60)}m ${SIM.trainerSeconds % 60}s`;
+            document.getElementById('pdf-assessment').innerHTML = buildAssessment();
+
+            document.getElementById('pdf-cert-page').style.display = won ? '' : 'none';
+
+            const element = document.getElementById('pdf-export-container');
+            const opt = {
+                margin:       0,
+                filename:     `Orbit_Commander_${won ? 'Report_and_Certificate' : 'Mission_Report'}_${timeUnit}_${Math.floor(SIM.sol)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'pt', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+            logConsole(won ? "[SYSTEM] Mission report and certificate PDF downloaded." : "[SYSTEM] Mission report PDF downloaded.", 'cyan');
+            speakText(won ? "Mission report and certificate download started." : "Mission report download started. Try again to earn your certificate!");
+        }
+
+        function failureCause() {
+            if (SIM.mode === 'challenge' && SIM.crewDose >= DOSE_LIMIT) return `radiation dose reached ${DOSE_LIMIT} mSv`;
+            if (SIM.o2Stored <= 0) return 'oxygen ran out';
+            if (SIM.waterStored <= 0) return 'water ran out';
+            if (SIM.foodStored <= 0) return 'food ran out';
+            if (SIM.crewDose > DOSE_WARN) return 'too much radiation';
+            if (SIM.mode === 'challenge' && SIM.crewHealth < 75) return 'crew vitals were below 75% at the end';
+            return 'crew could not survive';
+        }
+
+        function endGame(isVictory) {
+            SIM.missionOver = true;
+            clearCommTimers();
+            setSimSpeed(0, true);
+            SIM.lastResult = isVictory;
+            SIM.lastCause = isVictory ? '' : failureCause();
+            document.getElementById('end-pdf-label').innerText = isVictory ? 'DOWNLOAD MISSION REPORT & CERTIFICATE (.PDF)' : 'DOWNLOAD MISSION REPORT (.PDF)';
+            const modal = document.getElementById('modal-end');
+            modal.classList.remove('hidden');
+
+            const icon = document.getElementById('end-icon');
+            const title = document.getElementById('end-title');
+            const desc = document.getElementById('end-desc');
+            const timeUnit = SIM.sites[SIM.site].timeLabel;
+
+            if (isVictory) {
+                playSFX(1000, 0.4, 'sine');
+                icon.innerHTML = `<i class="fa-solid fa-trophy text-yellow-400 animate-bounce"></i>`;
+                title.innerText = "MISSION ACCOMPLISHED";
+                title.className = "font-orbitron text-2xl font-black text-emerald-300 tracking-wider";
+                desc.innerText = `You kept the crew alive for ${SIM.targetSols} ${timeUnit.toLowerCase()}s!`;
+                speakText(`Mission Accomplished! Orbit Commander sustained for ${SIM.targetSols} ${timeUnit}s.`);
+            } else {
+                playSFX(150, 0.5, 'sawtooth');
+                icon.innerHTML = `<i class="fa-solid fa-skull text-red-500 animate-pulse"></i>`;
+                title.innerText = "MISSION FAILED";
+                title.className = "font-orbitron text-2xl font-black text-red-400 tracking-wider";
+                desc.innerText = `Mission failed on ${timeUnit} ${SIM.sol.toFixed(1)}: ${SIM.lastCause}. Read the report to see what went wrong, then try again!`;
+                speakText(`Mission failed. ${SIM.lastCause}. Read your report and try again!`);
+            }
+
+            document.getElementById('end-sols-count').innerText = `${SIM.sol.toFixed(1)} / ${SIM.targetSols}`;
+            document.getElementById('end-health').innerText = `${SIM.crewHealth.toFixed(0)}%`;
+            document.getElementById('end-dose').innerText = `${SIM.crewDose.toFixed(1)} mSv`;
+        }
+
+        function restartSimulation() {
+            playSFX(600, 0.15);
+            document.getElementById('modal-end').classList.add('hidden');
+            resetSolCounter();
+            resetUpgrades();
+            SIM.shelterActive = false; SIM.activeEvent = null;
+
+            if (SIM.mode === 'challenge') startChallenge(SIM.difficulty);
+            else if (SIM.tutorialActive) SIM.targetSols = 9999;
+            else { SIM.credits = 1250; SIM.arrayPowerMax = (SIM.site === 'MARS' && SIM.mode === 'guided') ? MARS_GUIDED_ARRAY : 150; SIM.batteryMax = 500; SIM.batteryStored = 200; SIM.dustLevel = 12; SIM.o2Stored = 80; SIM.waterStored = START_WATER; SIM.foodStored = START_FOOD; }
+
+            document.getElementById('modal-end').classList.add('hidden');
+            if (SIM.mode !== 'challenge') { setCommsForSite(); beginMission(); }
+            logConsole(`Simulation reset. Protocol re-initialized.`, 'cyan');
+            speakText("Simulation reset. Systems online.");
+            updateUI();
+        }
+
+        window.onload = function() {
+            setWallpaperTheme('dashboard');
+            renderRealFlareTable();
+            fetchLiveNASAFlares(); 
+            resetFlareSystem();
+            applyModeUI();
+            updatePowerAllocations();
+            setSimSpeed(0, true);
+            updateUI();
+            setInterval(simTick, 100);
+        };
+    </script>
+</body>
+</html>
